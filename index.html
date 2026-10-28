@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>practicemeter: a practice timer that only counts while you play</title>
+  <meta name="description" content="A practice timer for musicians. It listens through the microphone and only counts the time your instrument is actually sounding.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f3f0e8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121513" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#toggle">Skip to start button</a>
+
+  <header class="masthead">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <path d="M9 28 L16 4 L23 28 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M16 22 L21 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="19.4" cy="13.2" r="2.2" fill="currentColor"/>
+      </svg>
+      <h1>practicemeter</h1>
+    </div>
+    <p class="tagline">Counts the minutes you actually play. Talking, tuning and phone breaks don't.</p>
+  </header>
+
+  <main class="layout">
+    <section class="card stage" aria-labelledby="stage-title" data-status="idle" id="stage">
+      <h2 id="stage-title" class="visually-hidden">Practice clock</h2>
+
+      <div class="status" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="status-label">Ready</span>
+      </div>
+
+      <p class="clock" id="clock" role="timer" aria-label="Practice time this session">00:00:00</p>
+      <p class="clock-caption">practiced this session</p>
+
+      <dl class="session-stats">
+        <div>
+          <dt>Session</dt>
+          <dd id="session-time">00:00:00</dd>
+        </div>
+        <div>
+          <dt>Efficiency</dt>
+          <dd id="efficiency">–</dd>
+        </div>
+        <div>
+          <dt>Today</dt>
+          <dd id="today-short">0 min</dd>
+        </div>
+      </dl>
+
+      <div class="meter-wrap">
+        <div class="meter" id="meter" role="meter" aria-label="Microphone level"
+             aria-valuemin="-90" aria-valuemax="0" aria-valuenow="-90" aria-valuetext="No input">
+          <div class="meter-fill" id="meter-fill"></div>
+          <div class="meter-floor" id="meter-floor" hidden></div>
+          <div class="meter-threshold" id="meter-threshold" hidden></div>
+        </div>
+        <p class="meter-legend">
+          <span class="legend-line" aria-hidden="true"></span>
+          When the level crosses the line, the clock runs.
+        </p>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="primary" id="toggle" aria-keyshortcuts="Space">Start</button>
+        <span class="hint" aria-hidden="true"><kbd>Space</kbd> starts and stops</span>
+      </div>
+
+      <div class="notice" id="notice" role="alert" hidden></div>
+    </section>
+
+    <section class="card goal" aria-labelledby="goal-title">
+      <h2 id="goal-title">Today</h2>
+      <div class="goal-body">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+          <circle class="ring-track" cx="60" cy="60" r="52"/>
+          <circle class="ring-value" id="ring-value" cx="60" cy="60" r="52"/>
+        </svg>
+        <div class="goal-text">
+          <p class="goal-minutes"><span id="today-min">0</span><span class="unit"> of <span id="goal-min">30</span> min</span></p>
+          <p class="goal-progress" id="goal-progress">0% of your daily goal</p>
+          <p class="streak" id="streak">No streak yet</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card history" aria-labelledby="history-title">
+      <div class="card-head">
+        <h2 id="history-title">Last 14 days</h2>
+        <p class="history-total" id="history-total"></p>
+      </div>
+      <div class="chart">
+        <div class="goal-line" id="goal-line" aria-hidden="true"><span>goal</span></div>
+        <ol class="bars" id="bars" aria-label="Minutes practiced per day, oldest first"></ol>
+      </div>
+    </section>
+
+    <section class="card settings" aria-labelledby="settings-title">
+      <h2 id="settings-title">Settings</h2>
+      <div class="field">
+        <label for="sensitivity">Sensitivity</label>
+        <input type="range" id="sensitivity" min="0" max="100" step="5" value="50" aria-describedby="sensitivity-help">
+        <output for="sensitivity" id="sensitivity-out">50</output>
+        <p class="help" id="sensitivity-help">Raise it for quiet instruments or a distant phone. Lower it in a noisy room.</p>
+      </div>
+      <div class="field">
+        <label for="grace">Pause that still counts</label>
+        <input type="range" id="grace" min="1" max="10" step="1" value="3" aria-describedby="grace-help">
+        <output for="grace" id="grace-out">3 s</output>
+        <p class="help" id="grace-help">Silences up to this long, like a breath or a page turn, stay on the clock.</p>
+      </div>
+      <div class="field field-inline">
+        <label for="goal">Daily goal</label>
+        <span class="number-wrap"><input type="number" id="goal" min="1" max="600" step="5" value="30" inputmode="numeric"> <span>min</span></span>
+      </div>
+      <div class="data-actions">
+        <button type="button" class="secondary" id="export">Export CSV</button>
+        <button type="button" class="secondary danger" id="reset">Reset history</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p><strong>Private by design.</strong> Sound is analysed on this device to measure loudness. Nothing is recorded, stored or sent anywhere. Your practice totals stay in this browser.</p>
+    <p>practicemeter is free and open source (MIT).</p>
+  </footer>
+
+  <script src="detector.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
