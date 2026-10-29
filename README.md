@@ -36,11 +36,11 @@ At the end of a session you see how long you sat there and how long you played. 
 
 ## Detection
 
-About 25 times a second the app measures the loudness of the microphone signal in decibels. It spends the first two seconds measuring the room to find the noise floor. From then on it tracks the floor as a low percentile of the last 30 seconds. In a quieter room the floor drops within about a second. In a louder room it waits for 30 seconds of history and then climbs by at most 2 dB per second, so a fan or air conditioner that runs the whole time ends up as background.
+About 25 times a second the app measures the loudness of the microphone signal in decibels. It spends the first two seconds measuring the room to find the noise floor. From then on it tracks the floor as a low percentile of the last 30 seconds. In a quieter room the floor drops within about a second. In a louder room it waits for 30 seconds of history and then climbs by at most 2 dB per second, so a fan or air conditioner that runs the whole time ends up as background. While the clock runs, the floor climbs only if the last 30 seconds held steady within 6 dB. Your breaths and bow changes dip further than that, so a long legato passage keeps counting.
 
 Sound counts as playing once it rises a set number of decibels above the floor. The sensitivity slider sets that distance between 6 and 24 dB. A sound has to last 150 ms before the clock starts, which filters out a dropped pencil or a knock on the stand. After you stop, the clock holds. If you start again within the pause allowance, the gap counts. If you wait longer, the app drops the gap and pauses.
 
-Loudness alone can't tell a held note from a steady machine hum. Hold one even drone for more than half a minute without a break and the floor may rise towards it. Pieces and scales have enough rests and changes in volume to prevent that.
+Loudness alone can't tell a held note from a steady machine hum. Hold one even drone for more than half a minute without a break and the floor may rise towards it. Pieces and scales change volume enough to prevent that.
 
 You'll find the detection code in `detector.js`. It has no browser dependencies, and `tests/detector.test.mjs` runs it against simulated sessions.
 

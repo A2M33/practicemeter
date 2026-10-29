@@ -10,7 +10,9 @@
  *  - Noise floor: set from the first ~2 s after start (calibration), then tracked as a low
  *    percentile of the last 30 s of levels. It falls quickly when the room gets quieter and
  *    rises slowly (rate-limited) when the room gets louder, so a fan or traffic hum that
- *    never stops is eventually treated as background.
+ *    never stops is eventually treated as background. While the clock runs, the floor only
+ *    rises if the last 30 s were steady (median minus quietest bucket within humSpreadDb),
+ *    so legato playing with quiet breaths never becomes its own floor.
  *  - Sounding: level above floor + threshold. Once playing, a few dB of hysteresis keeps
  *    soft notes from flickering the state.
  *  - Onset: the level must stay above the trigger for minOnMs (150 ms) before the clock
@@ -41,6 +43,7 @@
     floorPercentile: 0.05,  // low percentile of the window that defines the floor
     floorRiseDbPerSec: 2,   // max speed the floor can climb in a louder room
     floorFallTauMs: 500,    // time constant for the floor dropping in a quieter room
+    humSpreadDb: 6,         // while sounding, the floor only rises if the window is this steady
     maxStepMs: 2000         // longest single frame gap that is credited (tab throttling)
   };
 
@@ -98,6 +101,7 @@
     this.levelDb = MIN_DB;
     this.floorDb = MIN_DB;
     this.floorTargetDb = MIN_DB;
+    this.windowSpreadDb = Infinity;
     this.calibrated = false;
     this.calSamples = [];
     this.buckets = [];
@@ -128,10 +132,14 @@
     this.bucketN = 0;
     var cutoff = nowMs - o.floorWindowMs;
     while (this.buckets.length && this.buckets[0].t < cutoff) this.buckets.shift();
-    this.floorTargetDb = percentile(this.buckets.map(function (b) { return b.db; }), o.floorPercentile);
+    var levels = this.buckets.map(function (b) { return b.db; });
+    this.floorTargetDb = percentile(levels, o.floorPercentile);
+    // Spread between the quietest bucket and the median. A fan or a drone stays within a
+    // dB or two; music, even legato, dips at every breath or bow change.
+    this.windowSpreadDb = levels.length ? percentile(levels, 0.5) - percentile(levels, 0) : Infinity;
   };
 
-  Detector.prototype._trackFloor = function (level, nowMs, dt) {
+  Detector.prototype._trackFloor = function (level, nowMs, dt, active) {
     var o = this.opts;
     this.bucketSum += level;
     this.bucketN++;
@@ -141,9 +149,12 @@
       // Quieter room: follow down quickly (smoothed, so one dropout frame does little).
       this.floorDb += (level - this.floorDb) * (1 - Math.exp(-dt / o.floorFallTauMs));
     } else {
-      // Louder room: only once a full window of history exists, and only slowly.
+      // Louder room: only once a full window of history exists, and only slowly. While the
+      // clock runs, only a steady hum may lift the floor; otherwise long legato playing
+      // with quiet breaths would slowly become its own noise floor.
       var fullWindow = this.buckets.length >= 0.9 * (o.floorWindowMs / o.floorBucketMs);
-      if (fullWindow && this.floorTargetDb > this.floorDb) {
+      var humLike = this.windowSpreadDb <= o.humSpreadDb;
+      if (fullWindow && (!active || humLike) && this.floorTargetDb > this.floorDb) {
         this.floorDb = Math.min(this.floorTargetDb, this.floorDb + o.floorRiseDbPerSec * dt / 1000);
       }
     }
@@ -187,9 +198,9 @@
       return this.snapshot();
     }
 
-    this._trackFloor(level, nowMs, dt);
-
     var active = this.status === 'playing' || this.status === 'holding';
+    this._trackFloor(level, nowMs, dt, active);
+
     var trigger = this.floorDb + o.thresholdDb - (active ? o.hysteresisDb : 0);
     var above = level > trigger;
 

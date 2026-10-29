@@ -118,6 +118,27 @@ test('real practice with short breaths keeps counting for minutes', () => {
   assert.ok(state.practicedMs >= played * 0.98, `practiced ${state.practicedMs} of ${played}`);
 });
 
+test('legato playing whose breaths never reach the room level keeps counting', () => {
+  // Regression: the 5th-percentile floor used to climb to the playing level after ~40 s
+  // because the short breaths (only 20 dB above the room) were too rare to pull it down.
+  const segs = [calibrate];
+  for (let i = 0; i < 30; i++) segs.push({ ms: 5700, db: TONE_DB }, { ms: 300, db: -50 });
+  const { state, timeline } = simulate(segs);
+  const played = 30 * 6000;
+  assert.ok(state.practicedMs >= played * 0.98, `practiced ${state.practicedMs} of ${played}`);
+  assert.ok(state.floorDb < -60, `floor stayed near the room (floor ${state.floorDb.toFixed(1)} dB)`);
+  assert.ok(timeline.filter((f) => f.t > 1000 + 2500 + 1000).every((f) => f.playing), 'never paused');
+});
+
+test('steady hum that starts while playing is still rejected', () => {
+  // A held drone right after calibration enters "playing" at once; it must still stop counting.
+  const { state, timeline } = simulate([calibrate, { ms: 120000, db: -35 }]);
+  const tEnd = timeline[timeline.length - 1].t;
+  const at = (t) => timeline.find((f) => f.t >= t);
+  assert.equal(state.practicedMs - at(tEnd - 30000).practicedMs, 0, 'no practice in the last 30 s');
+  assert.equal(state.status, 'paused');
+});
+
 test('calibration while already playing recovers once the player pauses', () => {
   const { state } = simulate([
     { ms: 2500, db: TONE_DB },
