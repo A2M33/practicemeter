@@ -10,7 +10,7 @@ practicemeter is a practice timer for musicians that counts the time your instru
 
 **Try it:** https://a2m33.github.io/practicemeter/
 
-![practicemeter showing a running session, the daily goal ring and two weeks of practice history](docs/screenshot.png)
+![practicemeter showing a running session, the daily goal ring, two weeks of practice history and the list of past sessions](docs/screenshot.png)
 
 ## The idea
 
