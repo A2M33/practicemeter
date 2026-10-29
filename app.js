@@ -807,6 +807,11 @@
 
   /* ---------- boot ---------- */
 
+  // Offline copy of the page (not possible when opened from disk).
+  if ('serviceWorker' in navigator && /^https?:$/.test(window.location.protocol)) {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* private mode etc.: online only */ });
+  }
+
   renderSettings();
   renderDaily(true);
   if (DEMO) {
