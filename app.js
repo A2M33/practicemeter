@@ -139,18 +139,27 @@
   var STATUS_TEXT = {
     idle: 'Ready',
     stopped: 'Stopped',
-    calibrating: 'Listening to the room…',
+    calibrating: 'Stay quiet, measuring the room…',
     playing: 'Playing',
     holding: 'Short pause',
     paused: 'Paused, waiting for sound'
   };
   var shownStatus = null;
+  var shownLabel = null;
 
-  function setStatus(status) {
-    if (status === shownStatus) return;
+  function setStatus(status, label) {
+    label = label || STATUS_TEXT[status] || status;
+    if (status === shownStatus && label === shownLabel) return;
+    if (status !== shownStatus) el.stage.setAttribute('data-status', status === 'stopped' ? 'idle' : status);
     shownStatus = status;
-    el.stage.setAttribute('data-status', status === 'stopped' ? 'idle' : status);
-    el.statusLabel.textContent = STATUS_TEXT[status] || status;
+    shownLabel = label;
+    el.statusLabel.textContent = label;
+  }
+
+  /** "Stay quiet, measuring the room… 2", counting down the seconds of calibration. */
+  function calibratingLabel(sessionMs) {
+    var left = Math.max(1, Math.ceil((D.DEFAULTS.calibrationMs - sessionMs) / 1000));
+    return STATUS_TEXT.calibrating + ' ' + left;
   }
 
   function meterPct(db) {
@@ -158,7 +167,7 @@
   }
 
   function renderLive(st) {
-    setStatus(st.status);
+    setStatus(st.status, st.status === 'calibrating' ? calibratingLabel(st.sessionMs) : null);
     el.clock.textContent = hms(st.practicedMs);
     el.sessionTime.textContent = hms(st.sessionMs);
     el.efficiency.textContent = st.sessionMs >= 5000
