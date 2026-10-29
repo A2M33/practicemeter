@@ -31,7 +31,7 @@ At the end of a session you see how long you sat there and how long you played. 
 - CSV export of your daily totals and a button to reset the history
 - The screen stays awake while the app listens, in browsers that support the Screen Wake Lock API.
 - If you unplug the microphone or a call takes it over, the session stops, keeps the time you played and tells you what happened.
-- Space starts and stops a session, and the app works with a keyboard and a screen reader.
+- Space starts and stops a session, and the app works with a keyboard and a screen reader. A screen reader tells you when a session starts, stops or reaches the goal and stays quiet between phrases.
 - Light and dark themes that follow your system setting
 - Offline use once the page has loaded. You don't sign up for anything, and the app has no server.
 

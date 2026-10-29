@@ -24,6 +24,7 @@
   var el = {
     stage: $('stage'),
     statusLabel: $('status-label'),
+    announce: $('announce'),
     clock: $('clock'),
     sessionTime: $('session-time'),
     efficiency: $('efficiency'),
@@ -135,6 +136,29 @@
   function hideNotice() {
     el.notice.hidden = true;
     el.notice.textContent = '';
+  }
+
+  /* ---------- screen reader announcements ---------- */
+
+  var announceTimer = null;
+
+  /** Speaks a lasting change through the polite live region. */
+  function announce(text) {
+    clearTimeout(announceTimer);
+    el.announce.textContent = '';
+    // Set the text a moment later so the same message twice in a row is read again.
+    announceTimer = setTimeout(function () { el.announce.textContent = text; }, 60);
+  }
+
+  function spokenDuration(ms) {
+    var s = Math.floor(ms / 1000);
+    var h = Math.floor(s / 3600);
+    var m = Math.floor(s / 60) % 60;
+    var parts = [];
+    if (h) parts.push(h + (h === 1 ? ' hour' : ' hours'));
+    if (m) parts.push(m + (m === 1 ? ' minute' : ' minutes'));
+    if (!h) parts.push((s % 60) + (s % 60 === 1 ? ' second' : ' seconds'));
+    return parts.join(' ');
   }
 
   /* ---------- live display ---------- */
@@ -373,6 +397,7 @@
 
   /** Runs once per session when today's total crosses the goal. ctx may be null (demo). */
   function celebrate(ctx) {
+    announce('Daily goal of ' + data.settings.goalMin + ' minutes reached.');
     if (data.settings.chime && ctx && ctx.state === 'running') {
       try { playChime(ctx); } catch (e) { /* audio unavailable: the ring still shows it */ }
     }
@@ -518,6 +543,7 @@
         lastSave: now,
         timer: setInterval(tick, TICK_MS),
         celebrated: false,
+        roomMeasured: false,
         unwatch: null
       };
       var thisSession = session;
@@ -529,6 +555,8 @@
       setRunningUi(true);
       el.toggle.disabled = false;
       requestWakeLock();
+      announce('Session started. Stay quiet for ' + Math.round(D.DEFAULTS.calibrationMs / 1000) +
+        ' seconds while practicemeter measures the room.');
       tick();
     }).catch(function (err) {
       ctx.close().catch(function () {});
@@ -554,6 +582,10 @@
     if (!s) return;
     var now = performance.now();
     var st = s.det.update(readLevel(s), now);
+    if (!s.roomMeasured && !st.calibrating) {
+      s.roomMeasured = true;
+      announce('Room measured. The clock runs while you play.');
+    }
 
     var delta = st.practicedMs - s.lastPracticed;
     if (delta > 0) {
@@ -591,7 +623,11 @@
     renderLive(st);
     setStatus('stopped');
     renderDaily(true);
-    if (typeof notice === 'function') showNotice(notice(st));
+    if (typeof notice === 'function') {
+      showNotice(notice(st)); // the notice is an alert, so it is read out on its own
+    } else {
+      announce('Session stopped. ' + spokenDuration(st.practicedMs) + ' practiced.');
+    }
   }
 
   function toggle() {
