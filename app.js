@@ -11,6 +11,7 @@
   'use strict';
 
   var D = window.PracticeMeterDetector;
+  var MicWatch = window.PracticeMeterMicWatch;
   var STORAGE_KEY = 'practicemeter.v1';
   var TICK_MS = 40;              // ~25 analysis frames per second
   var SAVE_EVERY_MS = 5000;
@@ -394,6 +395,14 @@
     return 'The microphone could not be started' + (err && err.message ? ' (' + err.message + ')' : '') + '. Please try again.';
   }
 
+  function micLostMessage(reason, practicedMs) {
+    var cause = reason === 'ended'
+      ? 'The microphone stopped. It was unplugged, or another app took it.'
+      : 'Another app, maybe a call, took over the microphone.';
+    return cause + ' The session ended and your ' + hms(practicedMs) +
+      ' of playing is saved. Press Start to carry on.';
+  }
+
   function setRunningUi(running) {
     el.toggle.textContent = running ? 'Stop' : 'Start';
     el.toggle.classList.toggle('running', running);
@@ -443,8 +452,15 @@
         det: det,
         lastPracticed: 0,
         lastSave: now,
-        timer: setInterval(tick, TICK_MS)
+        timer: setInterval(tick, TICK_MS),
+        unwatch: null
       };
+      var thisSession = session;
+      session.unwatch = MicWatch.watch(stream, ctx, function (reason) {
+        if (session !== thisSession) return;
+        tick(); // credit the last frames before closing
+        stop(function (st) { return micLostMessage(reason, st.practicedMs); });
+      });
       setRunningUi(true);
       el.toggle.disabled = false;
       requestWakeLock();
@@ -488,11 +504,13 @@
     }
   }
 
-  function stop() {
+  /** Ends the session and keeps its time. notice(st), if given, returns text to show. */
+  function stop(notice) {
     var s = session;
     if (!s) return;
     session = null;
     clearInterval(s.timer);
+    if (s.unwatch) s.unwatch();
     var st = s.det.stop(performance.now());
     s.stream.getTracks().forEach(function (t) { t.stop(); });
     try { s.source.disconnect(); } catch (e) { /* already gone */ }
@@ -503,6 +521,7 @@
     renderLive(st);
     setStatus('stopped');
     renderDaily(true);
+    if (typeof notice === 'function') showNotice(notice(st));
   }
 
   function toggle() {

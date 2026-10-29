@@ -30,6 +30,7 @@ At the end of a session you see how long you sat there and how long you played. 
 - A streak count of consecutive days on which you reached your goal
 - CSV export of your daily totals and a button to reset the history
 - The screen stays awake while the app listens, in browsers that support the Screen Wake Lock API.
+- If you unplug the microphone or a call takes it over, the session stops, keeps the time you played and tells you what happened.
 - Space starts and stops a session, and the app works with a keyboard and a screen reader.
 - Light and dark themes that follow your system setting
 - Offline use once the page has loaded. You don't sign up for anything, and the app has no server.
@@ -66,6 +67,7 @@ Run the tests with Node 18 or newer:
 
 ```sh
 node tests/detector.test.mjs
+node tests/micwatch.test.mjs
 ```
 
 ## License

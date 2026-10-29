@@ -13,6 +13,8 @@ jobs:
         with:
           node-version: 20
       - name: Syntax check
-        run: node --check detector.js && node --check app.js
+        run: node --check detector.js && node --check micwatch.js && node --check app.js
       - name: Detector tests
         run: node tests/detector.test.mjs
+      - name: Mic watch tests
+        run: node tests/micwatch.test.mjs
