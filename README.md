@@ -61,7 +61,7 @@ python -m http.server 8000
 
 Then open http://localhost:8000. Browsers give microphone access to secure pages only, and localhost counts as secure. Opening `index.html` from disk works in some browsers and fails in others.
 
-To look around without a microphone, add `?demo` to the address. Demo mode fills in sample history and a running session and leaves your saved data alone.
+To look around without a microphone, click **Try the demo** at the top of the page or add `?demo` to the address. Demo mode fills in sample history and a running session and leaves your saved data alone.
 
 Run the tests with Node 18 or newer:
 

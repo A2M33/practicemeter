@@ -41,6 +41,8 @@
     streak: $('streak'),
     bars: $('bars'),
     goalLine: $('goal-line'),
+    chartEmpty: $('chart-empty'),
+    demoLink: $('demo-link'),
     historyTotal: $('history-total'),
     sensitivity: $('sensitivity'),
     sensitivityOut: $('sensitivity-out'),
@@ -281,6 +283,7 @@
     el.bars.textContent = '';
     el.bars.appendChild(frag);
     el.goalLine.style.setProperty('--g', (goal / maxMin).toFixed(4));
+    el.chartEmpty.hidden = total > 0;
     el.historyTotal.textContent = hoursMinutes(total) + ' total, goal met on ' + met + ' of 14 days';
   }
 
@@ -412,7 +415,7 @@
   function start() {
     hideNotice();
     if (DEMO) {
-      showNotice('This is the demo with sample data. Open the page without ?demo to use your microphone.');
+      showNotice('This is the demo with sample data. Use “Leave the demo” at the top to practise with your microphone.');
       return;
     }
     var AC = window.AudioContext || window.webkitAudioContext;
@@ -597,6 +600,8 @@
   renderDaily(true);
   if (DEMO) {
     document.title = 'practicemeter (demo)';
+    el.demoLink.textContent = 'Leave the demo';
+    el.demoLink.href = window.location.pathname;
     runDemo();
   } else {
     setStatus('idle');

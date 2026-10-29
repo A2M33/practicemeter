@@ -84,6 +84,13 @@ p { margin: 0; }
 .brand h1 { font-size: 1.6rem; }
 .mark { width: 28px; height: 28px; color: var(--accent); flex: none; transform: translateY(2px); }
 .tagline { color: var(--muted); font-size: .95rem; }
+.masthead-side { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 18px; }
+.demo-link {
+  color: var(--accent); font-weight: 650; font-size: .95rem;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px;
+  white-space: nowrap;
+}
+.demo-link:hover { text-decoration-thickness: 2.5px; }
 
 /* Layout */
 .layout {
@@ -266,6 +273,15 @@ kbd {
   position: absolute; right: 0; top: -8px;
   font-size: .68rem; line-height: 1; color: var(--muted); background: var(--surface); padding: 0 0 0 4px;
 }
+
+.chart-empty {
+  position: absolute; left: 0; right: 34px; top: 50%; transform: translateY(-60%);
+  margin: 0 auto; max-width: 300px; padding: 10px 14px;
+  text-align: center; font-size: .9rem; color: var(--muted);
+  background: var(--surface); border-radius: 10px;
+}
+.chart-empty a { color: var(--accent); font-weight: 650; text-underline-offset: 3px; }
+.chart-empty[hidden] { display: none; }
 
 /* Settings */
 .settings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 28px; align-items: start; }
