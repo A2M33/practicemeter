@@ -28,7 +28,8 @@ At the end of a session you see how long you sat there and how long you played. 
 - A daily goal with a progress ring, set to 30 minutes until you change it. When you cross it during a session, the ring pulses once and a short chime plays. You can turn the chime off in Settings, and the pulse stays still if your system asks for reduced motion.
 - A bar chart of the last 14 days with the minutes printed on each bar
 - A streak count of consecutive days on which you reached your goal
-- CSV export of your daily totals and a button to reset the history
+- A list of past sessions with the start time, length, minutes played and efficiency, plus your totals for the past 7 days, the past 30 days and all time
+- CSV export and import of your daily totals, so you can move your history to another browser, and a button to reset it. Importing keeps the larger total for any day you already have, so importing the same file twice changes nothing.
 - The screen stays awake while the app listens, in browsers that support the Screen Wake Lock API.
 - If you unplug the microphone or a call takes it over, the session stops, keeps the time you played and tells you what happened.
 - Space starts and stops a session, and the app works with a keyboard and a screen reader. A screen reader tells you when a session starts, stops or reaches the goal and stays quiet between phrases.
@@ -47,7 +48,7 @@ You'll find the detection code in `detector.js`. It has no browser dependencies,
 
 ## Privacy
 
-Your browser measures the loudness of the sound on your own device. The app doesn't record audio or send it anywhere. Your daily totals and settings sit in your browser's local storage and stay on your device until you export or reset them.
+Your browser measures the loudness of the sound on your own device. The app doesn't record audio or send it anywhere. Your daily totals, session list and settings sit in your browser's local storage and stay on your device until you export or reset them.
 
 ## Run locally
 
@@ -68,6 +69,7 @@ Run the tests with Node 18 or newer:
 ```sh
 node tests/detector.test.mjs
 node tests/micwatch.test.mjs
+node tests/history.test.mjs
 ```
 
 ## License

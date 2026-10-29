@@ -100,11 +100,13 @@ p { margin: 0; }
   grid-template-areas:
     "stage goal"
     "stage history"
+    "sessions sessions"
     "settings settings";
 }
 .stage { grid-area: stage; }
 .goal { grid-area: goal; }
 .history { grid-area: history; }
+.sessions { grid-area: sessions; }
 .settings { grid-area: settings; }
 
 .card {
@@ -297,6 +299,27 @@ kbd {
 .chart-empty a { color: var(--accent); font-weight: 650; text-underline-offset: 3px; }
 .chart-empty[hidden] { display: none; }
 
+/* Totals and past sessions */
+.sessions {
+  display: grid; grid-template-columns: minmax(180px, 230px) minmax(0, 1fr); gap: 14px 32px;
+  align-items: start;
+}
+.sessions h2 { grid-column: 1 / -1; }
+.totals { margin: 0; display: grid; gap: 12px; }
+.totals div { display: flex; flex-direction: column; gap: 1px; }
+.totals dt { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+.totals dd { margin: 0; font-family: var(--serif); font-size: 1.5rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.session-list { min-width: 0; }
+.session-table { width: 100%; border-collapse: collapse; font-size: .92rem; font-variant-numeric: tabular-nums; }
+.session-table th, .session-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.session-table th:first-child, .session-table td:first-child { text-align: left; padding-left: 0; }
+.session-table th:last-child, .session-table td:last-child { padding-right: 0; }
+.session-table thead th { color: var(--muted); font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding-top: 0; }
+.session-table tbody th { font-weight: 500; }
+.session-table tbody tr:last-child > * { border-bottom: 0; }
+.sessions-empty { color: var(--muted); font-size: .92rem; max-width: 46ch; }
+#sessions-more { margin-top: 12px; }
+
 /* Settings */
 .settings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 28px; align-items: start; }
 .settings h2 { grid-column: 1 / -1; }
@@ -315,7 +338,9 @@ input[type="number"] {
   padding: 8px 10px; border-radius: 10px;
   border: 1px solid var(--line); background: var(--surface-2);
 }
-.data-actions { display: flex; gap: 10px; flex-wrap: wrap; align-self: end; }
+.data-actions { grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; align-self: end; }
+.data-status { flex-basis: 100%; color: var(--muted); font-size: .86rem; }
+.data-status:empty { display: none; }
 
 /* Footer */
 .footer {
@@ -329,9 +354,15 @@ input[type="number"] {
 @media (max-width: 860px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "stage" "goal" "history" "settings";
+    grid-template-areas: "stage" "goal" "history" "sessions" "settings";
   }
   .settings { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .sessions { grid-template-columns: minmax(0, 1fr); }
+  .totals { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .totals dd { font-size: 1.15rem; }
 }
 
 @media (max-width: 480px) {
@@ -344,6 +375,9 @@ input[type="number"] {
   .bars { gap: 3px; }
   .bar-value { font-size: .6rem; }
   .ring { width: 92px; height: 92px; }
+  .session-table { font-size: .84rem; }
+  .session-table th, .session-table td { padding: 7px 5px; }
+  .session-table thead th { font-size: .66rem; letter-spacing: .03em; }
 }
 
 /* Phone on a music stand in landscape: keep the clock and status in view. */

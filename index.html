@@ -107,6 +107,26 @@
       </div>
     </section>
 
+    <section class="card sessions" aria-labelledby="sessions-title">
+      <h2 id="sessions-title">History</h2>
+      <dl class="totals">
+        <div><dt>Past 7 days</dt><dd id="total-week">0 min</dd></div>
+        <div><dt>Past 30 days</dt><dd id="total-month">0 min</dd></div>
+        <div><dt>All time</dt><dd id="total-all">0 min</dd></div>
+      </dl>
+      <div class="session-list">
+        <table class="session-table" id="session-table" hidden>
+          <caption class="visually-hidden">Practice sessions, newest first</caption>
+          <thead>
+            <tr><th scope="col">Started</th><th scope="col">Length</th><th scope="col">Played</th><th scope="col">Efficiency</th></tr>
+          </thead>
+          <tbody id="session-rows"></tbody>
+        </table>
+        <p class="sessions-empty" id="sessions-empty">Each session you finish gets a row here with its length, the time you played and your efficiency.</p>
+        <button type="button" class="secondary" id="sessions-more" aria-controls="session-table" hidden>Show all</button>
+      </div>
+    </section>
+
     <section class="card settings" aria-labelledby="settings-title">
       <h2 id="settings-title">Settings</h2>
       <div class="field">
@@ -128,7 +148,10 @@
       </div>
       <div class="data-actions">
         <button type="button" class="secondary" id="export">Export CSV</button>
+        <button type="button" class="secondary" id="import">Import CSV</button>
+        <input type="file" id="import-file" accept=".csv,text/csv" hidden>
         <button type="button" class="secondary danger" id="reset">Reset history</button>
+        <p class="data-status" id="data-status" role="status"></p>
       </div>
     </section>
   </main>
@@ -140,6 +163,7 @@
 
   <script src="detector.js"></script>
   <script src="micwatch.js"></script>
+  <script src="history.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

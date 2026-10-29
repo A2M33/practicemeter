@@ -12,7 +12,7 @@
 
   var D = window.PracticeMeterDetector;
   var MicWatch = window.PracticeMeterMicWatch;
-  var STORAGE_KEY = 'practicemeter.v1';
+  var H = window.PracticeMeterHistory;
   var TICK_MS = 40;              // ~25 analysis frames per second
   var SAVE_EVERY_MS = 5000;
   var METER_MIN_DB = -90;
@@ -52,23 +52,27 @@
     goal: $('goal'),
     chime: $('chime'),
     goalCard: $('goal-card'),
+    totalWeek: $('total-week'),
+    totalMonth: $('total-month'),
+    totalAll: $('total-all'),
+    sessionTable: $('session-table'),
+    sessionRows: $('session-rows'),
+    sessionsEmpty: $('sessions-empty'),
+    sessionsMore: $('sessions-more'),
     exportBtn: $('export'),
+    importBtn: $('import'),
+    importFile: $('import-file'),
+    dataStatus: $('data-status'),
     resetBtn: $('reset')
   };
 
   /* ---------- dates and formatting ---------- */
 
+  var dayKey = H.dayKey;
+  var addDays = H.addDays;
+  var clampNum = H.clampNum;
+
   function pad(n) { return (n < 10 ? '0' : '') + n; }
-
-  function dayKey(date) {
-    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
-  }
-
-  function addDays(date, n) {
-    var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    d.setDate(d.getDate() + n);
-    return d;
-  }
 
   function hms(ms) {
     var s = Math.max(0, Math.floor(ms / 1000));
@@ -81,46 +85,30 @@
     return h ? h + ' h ' + m + ' min' : m + ' min';
   }
 
-  /* ---------- storage ---------- */
-
-  function defaultData() {
-    return { version: 1, settings: { sensitivity: 50, graceS: 3, goalMin: 30, chime: true }, days: {} };
+  /** "45 s", "26 min", "1 h 5 min". */
+  function shortDuration(ms) {
+    return ms < 60000 ? Math.round(ms / 1000) + ' s' : hoursMinutes(Math.floor(ms / 60000));
   }
 
-  function clampNum(v, lo, hi, fallback) {
-    v = Number(v);
-    if (!isFinite(v)) return fallback;
-    return Math.min(hi, Math.max(lo, v));
-  }
-
-  function normalise(raw) {
-    var d = defaultData();
-    if (!raw || typeof raw !== 'object') return d;
-    var s = raw.settings || {};
-    d.settings.sensitivity = clampNum(s.sensitivity, 0, 100, 50);
-    d.settings.graceS = clampNum(s.graceS, 1, 10, 3);
-    d.settings.goalMin = clampNum(s.goalMin, 1, 600, 30);
-    d.settings.chime = s.chime !== false;
-    var days = raw.days || {};
-    Object.keys(days).forEach(function (k) {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(k) && Number(days[k]) > 0) d.days[k] = Number(days[k]);
-    });
-    return d;
-  }
+  /* ---------- storage (format and migration live in history.js) ---------- */
 
   function load() {
     if (DEMO) return demoData();
+    var loaded;
     try {
-      return normalise(JSON.parse(window.localStorage.getItem(STORAGE_KEY)));
+      loaded = H.load(function (key) { return window.localStorage.getItem(key); });
     } catch (e) {
-      return defaultData();
+      return H.defaultData(); // storage blocked
     }
+    // Data from the old key is copied to the new one. The old key stays as a backup.
+    if (loaded.migrated) setTimeout(save, 0);
+    return loaded.data;
   }
 
   function save() {
     if (DEMO) return; // demo state is in memory only
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      window.localStorage.setItem(H.STORAGE_KEY, JSON.stringify(data));
     } catch (e) { /* storage full or blocked: keep running */ }
   }
 
@@ -239,6 +227,8 @@
     lastDailyKey = key;
     renderGoal(todayMs);
     renderHistory();
+    renderTotals();
+    renderSessions();
   }
 
   function renderGoal(todayMs) {
@@ -322,6 +312,64 @@
     el.chartEmpty.hidden = total > 0;
     el.historyTotal.textContent = hoursMinutes(total) + ' total, goal met on ' + met + ' of 14 days';
   }
+
+  /* ---------- totals and past sessions ---------- */
+
+  var SESSIONS_SHOWN = 8;
+  var showAllSessions = false;
+
+  function renderTotals() {
+    var t = H.totals(data.days, new Date());
+    el.totalWeek.textContent = shortDuration(t.week);
+    el.totalMonth.textContent = shortDuration(t.month);
+    el.totalAll.textContent = shortDuration(t.all);
+  }
+
+  function sessionStarted(start) {
+    var d = new Date(start);
+    var today = new Date();
+    var day = dayKey(d) === dayKey(today) ? 'Today'
+      : dayKey(d) === dayKey(addDays(today, -1)) ? 'Yesterday'
+      : d.toLocaleDateString('en', d.getFullYear() === today.getFullYear()
+        ? { weekday: 'short', day: 'numeric', month: 'short' }
+        : { day: 'numeric', month: 'short', year: 'numeric' });
+    return day + ', ' + d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function renderSessions() {
+    // The running session is in data.sessions too, but only finished ones are listed.
+    var running = session && session.entry;
+    var list = data.sessions.filter(function (x) { return x !== running && x.playedMs > 0; }).reverse();
+    var shown = showAllSessions ? list : list.slice(0, SESSIONS_SHOWN);
+    var frag = document.createDocumentFragment();
+    shown.forEach(function (x) {
+      var tr = document.createElement('tr');
+      [
+        sessionStarted(x.start),
+        shortDuration(x.lengthMs),
+        shortDuration(x.playedMs),
+        Math.round(100 * Math.min(1, x.playedMs / Math.max(1, x.lengthMs))) + '%'
+      ].forEach(function (text, i) {
+        var cell = document.createElement(i === 0 ? 'th' : 'td');
+        if (i === 0) cell.scope = 'row';
+        cell.textContent = text;
+        tr.appendChild(cell);
+      });
+      frag.appendChild(tr);
+    });
+    el.sessionRows.textContent = '';
+    el.sessionRows.appendChild(frag);
+    el.sessionTable.hidden = !list.length;
+    el.sessionsEmpty.hidden = list.length > 0;
+    el.sessionsMore.hidden = list.length <= SESSIONS_SHOWN;
+    el.sessionsMore.textContent = showAllSessions ? 'Show fewer' : 'Show all ' + list.length + ' sessions';
+    el.sessionsMore.setAttribute('aria-expanded', String(showAllSessions));
+  }
+
+  el.sessionsMore.addEventListener('click', function () {
+    showAllSessions = !showAllSessions;
+    renderSessions();
+  });
 
   /* ---------- settings ---------- */
 
@@ -412,21 +460,19 @@
     if (e.animationName === 'ring-burst') el.goalCard.classList.remove('celebrate');
   });
 
-  /* ---------- export and reset ---------- */
+  /* ---------- export, import and reset ---------- */
+
+  function setDataStatus(text) {
+    el.dataStatus.textContent = text;
+  }
 
   el.exportBtn.addEventListener('click', function () {
-    var keys = Object.keys(data.days).sort();
-    if (!keys.length) {
-      showNotice('Nothing to export yet. Practice totals appear here after your first session.');
+    if (!Object.keys(data.days).length) {
+      setDataStatus('Nothing to export yet. Your daily totals appear after your first session.');
       return;
     }
-    var goal = data.settings.goalMin;
-    var lines = ['date,minutes,goal_minutes,goal_met'];
-    keys.forEach(function (k) {
-      var min = data.days[k] / 60000;
-      lines.push(k + ',' + min.toFixed(1) + ',' + goal + ',' + (min >= goal ? 'yes' : 'no'));
-    });
-    var blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv;charset=utf-8' });
+    setDataStatus('');
+    var blob = new Blob([H.toCsv(data)], { type: 'text/csv;charset=utf-8' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
@@ -437,10 +483,41 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   });
 
+  el.importBtn.addEventListener('click', function () {
+    el.importFile.value = '';
+    el.importFile.click();
+  });
+
+  el.importFile.addEventListener('change', function () {
+    var file = el.importFile.files && el.importFile.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var parsed = H.parseCsv(String(reader.result));
+      if (!parsed.rows) {
+        setDataStatus(file.name + ' has no daily totals in it. Import a CSV saved with Export CSV.');
+        return;
+      }
+      var changed = H.mergeDays(data.days, parsed.days);
+      save();
+      renderDaily(true);
+      setDataStatus('Imported ' + file.name + ': ' + changed + (changed === 1 ? ' day' : ' days') + ' updated' +
+        (parsed.rows > changed ? ', ' + (parsed.rows - changed) + ' already up to date' : '') +
+        (parsed.skipped ? ', ' + parsed.skipped + (parsed.skipped === 1 ? ' line' : ' lines') + ' skipped' : '') + '.');
+    };
+    reader.onerror = function () {
+      setDataStatus('Could not read ' + file.name + '.');
+    };
+    reader.readAsText(file);
+  });
+
   el.resetBtn.addEventListener('click', function () {
     if (!window.confirm('Delete all saved practice history? Your settings stay. This cannot be undone.')) return;
     data.days = {};
+    // A running session keeps its row so it is still recorded when it stops.
+    data.sessions = session && session.entry ? [session.entry] : [];
     save();
+    setDataStatus('History deleted.');
     renderDaily(true);
   });
 
@@ -544,8 +621,12 @@
         timer: setInterval(tick, TICK_MS),
         celebrated: false,
         roomMeasured: false,
-        unwatch: null
+        unwatch: null,
+        // Kept in data.sessions and saved with everything else, so closing the tab
+        // mid-session still leaves a row with the time played so far.
+        entry: { start: Date.now(), lengthMs: 0, playedMs: 0 }
       };
+      data.sessions.push(session.entry);
       var thisSession = session;
       session.unwatch = MicWatch.watch(stream, ctx, function (reason) {
         if (session !== thisSession) return;
@@ -586,6 +667,8 @@
       s.roomMeasured = true;
       announce('Room measured. The clock runs while you play.');
     }
+    s.entry.lengthMs = st.sessionMs;
+    s.entry.playedMs = st.practicedMs;
 
     var delta = st.practicedMs - s.lastPracticed;
     if (delta > 0) {
@@ -618,6 +701,12 @@
     try { s.source.disconnect(); } catch (e) { /* already gone */ }
     s.ctx.close().catch(function () {});
     releaseWakeLock();
+    s.entry.lengthMs = st.sessionMs;
+    s.entry.playedMs = st.practicedMs;
+    if (!(st.practicedMs > 0)) {
+      // Nothing played: no row for this session.
+      data.sessions = data.sessions.filter(function (x) { return x !== s.entry; });
+    }
     save();
     setRunningUi(false);
     renderLive(st);
@@ -662,12 +751,26 @@
   /* ---------- demo ---------- */
 
   function demoData() {
-    var d = defaultData();
+    var d = H.defaultData();
     var today = new Date();
     // Minutes per day, oldest first; the last entry is today so far.
     var mins = [34, 41, 0, 28, 52, 36, 31, 45, 22, 38, 31, 47, 33, 6.2];
     mins.forEach(function (m, i) {
-      if (m > 0) d.days[dayKey(addDays(today, i - 13))] = Math.round(m * 60000 + (i * 7919) % 50000);
+      if (!(m > 0)) return;
+      var day = addDays(today, i - 13);
+      var total = Math.round(m * 60000 + (i * 7919) % 50000);
+      d.days[dayKey(day)] = total;
+      // One evening session, plus a morning one on longer days; efficiency 70 to 90%.
+      var parts = m > 40 ? [0.4, 0.6] : [1];
+      var played = 0;
+      parts.forEach(function (share, j) {
+        var ms = j === parts.length - 1 ? total - played : Math.round(total * share);
+        played += ms;
+        var start = new Date(day.getFullYear(), day.getMonth(), day.getDate(),
+          parts.length > 1 && j === 0 ? 7 : 18, (i * 17 + j * 23) % 60);
+        if (i === 13) start = new Date(Math.min(start.getTime(), Date.now() - 45 * 60000));
+        d.sessions.push({ start: start.getTime(), lengthMs: Math.round(ms / (0.7 + ((i * 7 + j * 3) % 21) / 100)), playedMs: ms });
+      });
     });
     return d;
   }
