@@ -77,10 +77,11 @@
       <div class="notice" id="notice" role="alert" hidden></div>
     </section>
 
-    <section class="card goal" aria-labelledby="goal-title">
+    <section class="card goal" aria-labelledby="goal-title" id="goal-card">
       <h2 id="goal-title">Today</h2>
       <div class="goal-body">
         <svg class="ring" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+          <circle class="ring-burst" cx="60" cy="60" r="52"/>
           <circle class="ring-track" cx="60" cy="60" r="52"/>
           <circle class="ring-value" id="ring-value" cx="60" cy="60" r="52"/>
         </svg>
@@ -121,6 +122,7 @@
       <div class="field field-inline">
         <label for="goal">Daily goal</label>
         <span class="number-wrap"><input type="number" id="goal" min="1" max="600" step="5" value="30" inputmode="numeric"> <span>min</span></span>
+        <label class="check"><input type="checkbox" id="chime" checked> Chime when I reach it</label>
       </div>
       <div class="data-actions">
         <button type="button" class="secondary" id="export">Export CSV</button>

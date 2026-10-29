@@ -25,7 +25,7 @@ At the end of a session you see how long you sat there and how long you played. 
 - A live level meter with the threshold line, so you can see what the app hears
 - A sensitivity slider. Raise it for quiet instruments or a distant phone and lower it in a noisy room.
 - A pause allowance you can set from 1 to 10 seconds (3 by default)
-- A daily goal with a progress ring, set to 30 minutes until you change it
+- A daily goal with a progress ring, set to 30 minutes until you change it. When you cross it during a session, the ring pulses once and a short chime plays. You can turn the chime off in Settings, and the pulse stays still if your system asks for reduced motion.
 - A bar chart of the last 14 days with the minutes printed on each bar
 - A streak count of consecutive days on which you reached your goal
 - CSV export of your daily totals and a button to reset the history

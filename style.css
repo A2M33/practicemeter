@@ -236,6 +236,20 @@ kbd {
   stroke-dasharray: 326.73; stroke-dashoffset: 326.73;
   transition: stroke-dashoffset .6s ease;
 }
+.ring { overflow: visible; }
+.ring-burst { stroke: var(--accent); opacity: 0; transform-box: fill-box; transform-origin: center; }
+/* Played once when today's goal is reached during a session. */
+.goal.celebrate .ring { animation: ring-pop .9s cubic-bezier(.2, .9, .3, 1.2) 1; }
+.goal.celebrate .ring-burst { animation: ring-burst 1.1s ease-out 1; }
+@keyframes ring-pop {
+  0% { transform: rotate(-90deg) scale(1); }
+  35% { transform: rotate(-90deg) scale(1.08); }
+  100% { transform: rotate(-90deg) scale(1); }
+}
+@keyframes ring-burst {
+  0% { opacity: .55; transform: scale(1); stroke-width: 11px; }
+  100% { opacity: 0; transform: scale(1.3); stroke-width: 2px; }
+}
 .goal-minutes { font-family: var(--serif); font-size: 2.2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .goal-minutes .unit { font-family: var(--sans); font-size: 1rem; color: var(--muted); }
 .goal-progress { color: var(--muted); font-size: .9rem; margin-top: 2px; }
@@ -292,6 +306,9 @@ kbd {
 .field output { grid-column: 2; grid-row: 1; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .9rem; }
 .help { grid-column: 1 / -1; color: var(--muted); font-size: .84rem; }
 .field-inline { grid-template-columns: 1fr; }
+.check { display: inline-flex; align-items: center; gap: 8px; font-size: .9rem; color: var(--muted); cursor: pointer; }
+.field .check { font-weight: 400; font-size: .9rem; }
+.check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 .number-wrap { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
 input[type="number"] {
   width: 90px; font: inherit; color: var(--ink);

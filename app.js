@@ -49,6 +49,8 @@
     grace: $('grace'),
     graceOut: $('grace-out'),
     goal: $('goal'),
+    chime: $('chime'),
+    goalCard: $('goal-card'),
     exportBtn: $('export'),
     resetBtn: $('reset')
   };
@@ -81,7 +83,7 @@
   /* ---------- storage ---------- */
 
   function defaultData() {
-    return { version: 1, settings: { sensitivity: 50, graceS: 3, goalMin: 30 }, days: {} };
+    return { version: 1, settings: { sensitivity: 50, graceS: 3, goalMin: 30, chime: true }, days: {} };
   }
 
   function clampNum(v, lo, hi, fallback) {
@@ -97,6 +99,7 @@
     d.settings.sensitivity = clampNum(s.sensitivity, 0, 100, 50);
     d.settings.graceS = clampNum(s.graceS, 1, 10, 3);
     d.settings.goalMin = clampNum(s.goalMin, 1, 600, 30);
+    d.settings.chime = s.chime !== false;
     var days = raw.days || {};
     Object.keys(days).forEach(function (k) {
       if (/^\d{4}-\d{2}-\d{2}$/.test(k) && Number(days[k]) > 0) d.days[k] = Number(days[k]);
@@ -304,6 +307,7 @@
     el.grace.value = data.settings.graceS;
     el.graceOut.textContent = data.settings.graceS + ' s';
     el.goal.value = data.settings.goalMin;
+    el.chime.checked = data.settings.chime;
   }
 
   function applyDetectorSettings() {
@@ -333,6 +337,54 @@
     el.goal.value = data.settings.goalMin;
     save();
     renderDaily(true);
+  });
+
+  el.chime.addEventListener('change', function () {
+    data.settings.chime = el.chime.checked;
+    save();
+  });
+
+  /* ---------- goal celebration ---------- */
+
+  var reducedMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+  /** A short rising arpeggio, synthesized, so there is no sound file to load. */
+  function playChime(ctx) {
+    var t0 = ctx.currentTime + 0.02;
+    var out = ctx.createGain();
+    out.gain.value = 0.16;
+    out.connect(ctx.destination);
+    [784, 988, 1175, 1568].forEach(function (freq, i) { // G5 B5 D6 G6
+      var t = t0 + i * 0.11;
+      var osc = ctx.createOscillator();
+      var env = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      env.gain.setValueAtTime(0.0001, t);
+      env.gain.exponentialRampToValueAtTime(1, t + 0.012);
+      env.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      osc.connect(env);
+      env.connect(out);
+      osc.start(t);
+      osc.stop(t + 1.15);
+    });
+    setTimeout(function () { try { out.disconnect(); } catch (e) { /* context closed */ } }, 2000);
+  }
+
+  /** Runs once per session when today's total crosses the goal. ctx may be null (demo). */
+  function celebrate(ctx) {
+    if (data.settings.chime && ctx && ctx.state === 'running') {
+      try { playChime(ctx); } catch (e) { /* audio unavailable: the ring still shows it */ }
+    }
+    if (!(reducedMotion && reducedMotion.matches)) {
+      el.goalCard.classList.remove('celebrate');
+      void el.goalCard.offsetWidth; // restart the animation if it ran before
+      el.goalCard.classList.add('celebrate');
+    }
+  }
+
+  el.goalCard.addEventListener('animationend', function (e) {
+    if (e.animationName === 'ring-burst') el.goalCard.classList.remove('celebrate');
   });
 
   /* ---------- export and reset ---------- */
@@ -465,6 +517,7 @@
         lastPracticed: 0,
         lastSave: now,
         timer: setInterval(tick, TICK_MS),
+        celebrated: false,
         unwatch: null
       };
       var thisSession = session;
@@ -505,8 +558,13 @@
     var delta = st.practicedMs - s.lastPracticed;
     if (delta > 0) {
       var k = dayKey(new Date());
-      data.days[k] = (data.days[k] || 0) + delta;
+      var before = data.days[k] || 0;
+      data.days[k] = before + delta;
       s.lastPracticed = st.practicedMs;
+      if (!s.celebrated && before < goalMs() && data.days[k] >= goalMs()) {
+        s.celebrated = true;
+        celebrate(s.ctx);
+      }
     }
     renderLive(st);
     renderDaily(false);
@@ -586,11 +644,16 @@
     var t = 0;
     var floor = -66;
     var trigger = floor + D.sensitivityToThreshold(data.settings.sensitivity);
+    var celebrated = false;
     function frame() {
       t += TICK_MS;
       practiced += TICK_MS;
       sessionMs += TICK_MS;
       data.days[todayKey] += TICK_MS;
+      if (!celebrated && data.days[todayKey] >= goalMs() && data.days[todayKey] - TICK_MS < goalMs()) {
+        celebrated = true;
+        celebrate(null); // no audio context in the demo, so the ring only
+      }
       var level = -27 + 5 * Math.sin(t / 310) + 3 * Math.sin(t / 97);
       renderLive({
         status: 'playing', practicedMs: practiced, sessionMs: sessionMs,
