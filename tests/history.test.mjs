@@ -101,6 +101,28 @@ test('empty values fall back instead of counting as zero', () => {
   assert.equal(normalise({ settings: { sensitivity: null, goalMin: '' } }).settings.goalMin, 30);
 });
 
+test('saved data that would print as NaN or Invalid Date is dropped', () => {
+  const d = normalise({
+    settings: { goalMin: 22.5 },
+    days: { '2026-02-31': 60000, '2026-13-01': 60000, '2026-10-01': 1e999, '2026-10-02': 60000 },
+    sessions: [
+      { start: 1e999, lengthMs: 1, playedMs: 1 },
+      { start: 9e15, lengthMs: 1, playedMs: 1 },
+      { start: 1000, lengthMs: 1, playedMs: 1e999 },
+      { start: 2000, lengthMs: 5, playedMs: 4 },
+    ],
+  });
+  assert.deepEqual(d.days, { '2026-10-02': 60000 });
+  assert.deepEqual(d.sessions.map((s) => s.start), [2000]);
+  assert.equal(d.settings.goalMin, 23);
+});
+
+test('CSV import skips dates that do not exist', () => {
+  const parsed = parseCsv('2026-02-31,10\n2026-02-28,10\n');
+  assert.deepEqual(parsed.days, { '2026-02-28': 600000 });
+  assert.equal(parsed.skipped, 1);
+});
+
 let failed = 0;
 for (const { name, fn } of tests) {
   try {

@@ -30,6 +30,7 @@
   var MAX_SESSIONS = 2000;
   var CSV_HEADER = 'date,minutes,goal_minutes,goal_met';
   var DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+  var MAX_TIME = 8.64e15; // the latest moment a Date can hold
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
@@ -43,6 +44,14 @@
     var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     d.setDate(d.getDate() + n);
     return d;
+  }
+
+  /** A real calendar day in 'YYYY-MM-DD' form, so not 2026-02-31. */
+  function isDay(k) {
+    if (!DAY_RE.test(k)) return false;
+    var p = k.split('-').map(Number);
+    var d = new Date(p[0], p[1] - 1, p[2]);
+    return d.getMonth() === p[1] - 1 && d.getDate() === p[2];
   }
 
   function clampNum(v, lo, hi, fallback) {
@@ -69,12 +78,13 @@
     var s = raw.settings || {};
     d.settings.sensitivity = clampNum(s.sensitivity, 0, 100, 50);
     d.settings.graceS = clampNum(s.graceS, 1, 10, 3);
-    d.settings.goalMin = clampNum(s.goalMin, 1, 600, 30);
+    d.settings.goalMin = Math.round(clampNum(s.goalMin, 1, 600, 30));
     d.settings.chime = s.chime !== false;
 
     var days = raw.days || {};
     Object.keys(days).forEach(function (k) {
-      if (DAY_RE.test(k) && Number(days[k]) > 0) d.days[k] = Number(days[k]);
+      var ms = Number(days[k]);
+      if (isDay(k) && ms > 0 && isFinite(ms)) d.days[k] = ms;
     });
 
     var seen = {};
@@ -84,7 +94,7 @@
       var played = Number(x.playedMs);
       var length = Number(x.lengthMs);
       // Sessions where nothing was played (or a tab closed mid-calibration) are dropped.
-      if (!(start > 0) || !(played > 0) || !isFinite(length) || seen[start]) return;
+      if (!(start > 0) || start > MAX_TIME || !(played > 0) || !isFinite(played) || !isFinite(length) || seen[start]) return;
       seen[start] = true;
       d.sessions.push({ start: start, lengthMs: Math.max(length, played), playedMs: played });
     });
@@ -155,7 +165,7 @@
       var cols = line.split(/[,;\t]/).map(function (c) { return c.trim().replace(/^"|"$/g, ''); });
       if (i === 0 && cols[0].toLowerCase() === 'date') return;
       var min = Number(cols[1]);
-      if (!DAY_RE.test(cols[0]) || !isFinite(min) || min < 0 || min > 1440 || cols[1] === '') {
+      if (!isDay(cols[0]) || !isFinite(min) || min < 0 || min > 1440 || cols[1] === '') {
         skipped++;
         return;
       }
