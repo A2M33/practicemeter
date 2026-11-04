@@ -123,6 +123,12 @@ test('CSV import skips dates that do not exist', () => {
   assert.equal(parsed.skipped, 1);
 });
 
+test('CSV from a German spreadsheet keeps its decimals', () => {
+  const parsed = parseCsv('date;minutes;goal_minutes;goal_met\n2026-10-01;30,5;30;yes\n2026-10-02\t12,25\t30\tno\n');
+  assert.deepEqual(parsed.days, { '2026-10-01': 1830000, '2026-10-02': 735000 });
+  assert.equal(parsed.skipped, 0);
+});
+
 let failed = 0;
 for (const { name, fn } of tests) {
   try {

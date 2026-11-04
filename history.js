@@ -162,10 +162,13 @@
     String(text || '').replace(/^﻿/, '').split(/\r\n|\n|\r/).forEach(function (line, i) {
       line = line.trim();
       if (!line) return;
-      var cols = line.split(/[,;\t]/).map(function (c) { return c.trim().replace(/^"|"$/g, ''); });
+      // A spreadsheet in a German locale saves "2026-10-01;30,5;30;yes". With semicolons or
+      // tabs as separators, a comma is the decimal mark.
+      var cols = line.split(/[;\t]/.test(line) ? /[;\t]/ : ',').map(function (c) { return c.trim().replace(/^"|"$/g, ''); });
       if (i === 0 && cols[0].toLowerCase() === 'date') return;
-      var min = Number(cols[1]);
-      if (!isDay(cols[0]) || !isFinite(min) || min < 0 || min > 1440 || cols[1] === '') {
+      var minutes = (cols[1] || '').replace(',', '.');
+      var min = Number(minutes);
+      if (!isDay(cols[0]) || !isFinite(min) || min < 0 || min > 1440 || minutes === '') {
         skipped++;
         return;
       }
