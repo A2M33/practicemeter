@@ -395,6 +395,8 @@ input[type="number"] {
 /* Smallest phones: the date in the first column wraps, so the table stays inside its card. */
 @media (max-width: 360px) {
   .session-table tbody th { white-space: normal; }
+  .totals dt { font-size: .68rem; letter-spacing: .04em; }
+  .totals dd { font-size: 1rem; white-space: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {
