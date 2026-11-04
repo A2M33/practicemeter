@@ -387,6 +387,11 @@ input[type="number"] {
   .session-stats, .meter-wrap, .actions { margin-top: 12px; }
 }
 
+/* Smallest phones: the date in the first column wraps, so the table stays inside its card. */
+@media (max-width: 360px) {
+  .session-table tbody th { white-space: normal; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
