@@ -283,7 +283,8 @@ kbd {
 .goal-line {
   position: absolute; left: 0; right: 0; height: 0;
   bottom: calc(var(--day-h) + var(--plot) * var(--g, .8));
-  border-top: 1.5px dashed var(--muted); opacity: .6; pointer-events: none;
+  border-top: 1.5px dashed var(--muted); pointer-events: none;
+  border-top-color: color-mix(in srgb, var(--muted) 60%, transparent);
 }
 .goal-line span {
   position: absolute; right: 0; top: -8px;
