@@ -406,6 +406,25 @@ test('the service worker caches every file the page and manifest use', () => {
   assert.match(sw, /event\.waitUntil\(caches\.open/, 'cache writes finish before the worker stops');
 });
 
+test('status text keeps 4.5:1 on its pill in the light theme', () => {
+  const css = source('style.css');
+  const vars = /:root\s*\{([\s\S]*?)\}/.exec(css)[1];
+  const color = (name) => /#[0-9a-f]{6}/i.exec(new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i').exec(vars)[1])[0];
+  const luminance = (hex) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a, b) => {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  for (const state of ['accent', 'hold', 'rest']) {
+    const pair = [color(state), color(state === 'accent' ? 'accent-soft' : `${state}-soft`)];
+    assert.ok(contrast(...pair) >= 4.5, `${state}: ${contrast(...pair).toFixed(2)}`);
+  }
+});
+
 // ---- tests end ----
 
 let failed = 0;
