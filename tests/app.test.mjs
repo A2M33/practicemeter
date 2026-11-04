@@ -269,6 +269,29 @@ test('a refused microphone explains itself and can be tried again', async () => 
   }
 });
 
+test('a failure after the microphone was granted still switches it off', async () => {
+  const g = boot();
+  // Firefox throws here when the microphone and the context use different sample rates.
+  const original = FakeContext.prototype.createMediaStreamSource;
+  FakeContext.prototype.createMediaStreamSource = () => { throw Object.assign(new Error('sample rate'), { name: 'NotSupportedError' }); };
+  g.$('toggle').click();
+  await flush();
+  FakeContext.prototype.createMediaStreamSource = original;
+  assert.equal(g.streams.length, 1);
+  assert.equal(g.liveTracks(), 0);
+  assert.match(g.$('notice').textContent, /could not be started/);
+  assert.equal(g.$('toggle').textContent, 'Start');
+});
+
+test('a browser refusing the audio context gets a notice, not a dead button', () => {
+  const g = boot();
+  FakeContext.failNew = true;
+  g.$('toggle').click();
+  assert.match(g.$('notice').textContent, /could not be started/);
+  assert.equal(g.media.calls, 0);
+  assert.equal(g.$('toggle').getAttribute('aria-disabled'), null);
+});
+
 // ---- tests end ----
 
 let failed = 0;

@@ -604,11 +604,19 @@
     }
 
     // Create the audio context inside the click so mobile browsers allow it to run.
-    var ctx = new AC();
+    var ctx;
+    try {
+      ctx = new AC();
+    } catch (err) {
+      showNotice(micErrorMessage(err));
+      return;
+    }
+    var stream = null;
     setStarting(true);
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-    }).then(function (stream) {
+    }).then(function (granted) {
+      stream = granted;
       if (ctx.state === 'suspended') ctx.resume().catch(function () {});
       var source = ctx.createMediaStreamSource(stream);
       var analyser = ctx.createAnalyser();
@@ -655,6 +663,8 @@
         ' seconds while practicemeter measures the room.');
       tick();
     }).catch(function (err) {
+      // The browser may have granted the stream before the audio graph failed.
+      if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
       ctx.close().catch(function () {});
       setStarting(false);
       setRunningUi(false);
