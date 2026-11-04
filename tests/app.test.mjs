@@ -292,6 +292,20 @@ test('a browser refusing the audio context gets a notice, not a dead button', ()
   assert.equal(g.$('toggle').getAttribute('aria-disabled'), null);
 });
 
+test('Stop clears the level meter and keeps the clock', async () => {
+  const g = boot();
+  g.$('toggle').click();
+  await flush();
+  g.run(2500, QUIET);
+  g.run(3000, LOUD);
+  assert.equal(g.$('meter-threshold').hidden, false);
+  g.$('toggle').click();
+  assert.equal(g.$('meter-fill').style.transform, 'scaleX(0)');
+  assert.equal(g.$('meter-threshold').hidden, true);
+  assert.equal(g.$('meter').getAttribute('aria-valuetext'), 'No input');
+  assert.notEqual(g.$('clock').textContent, '00:00:00');
+});
+
 // ---- tests end ----
 
 let failed = 0;

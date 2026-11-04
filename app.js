@@ -204,6 +204,15 @@
     }
   }
 
+  /** Back to the state before Start, so a stopped meter does not claim a live level. */
+  function clearMeter() {
+    el.meterFill.style.transform = 'scaleX(0)';
+    el.meterThreshold.hidden = true;
+    el.meterFloor.hidden = true;
+    el.meter.setAttribute('aria-valuenow', String(METER_MIN_DB));
+    el.meter.setAttribute('aria-valuetext', 'No input');
+  }
+
   /* ---------- daily goal, streak, history ---------- */
 
   function goalMs() { return data.settings.goalMin * 60000; }
@@ -736,6 +745,7 @@
     save();
     setRunningUi(false);
     renderLive(st);
+    clearMeter();
     setStatus('stopped');
     renderDaily(true);
     if (typeof notice === 'function') {
