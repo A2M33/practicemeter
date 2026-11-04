@@ -169,6 +169,18 @@ test('a stalled tab cannot credit a long gap at the moment the clock starts', ()
   assert.ok(state.practicedMs <= 2000, `credited ${state.practicedMs} ms`);
 });
 
+test('zeros from a microphone that is still starting up do not lower the floor', () => {
+  const { state, timeline } = simulate([{ ms: 800, db: -200 }, { ms: 1700, db: ROOM_DB }, { ms: 40000, db: ROOM_DB }]);
+  assert.equal(state.practicedMs, 0);
+  assert.ok(timeline.every((f) => !f.playing), 'room noise never counted');
+  assert.ok(state.floorDb > -75, `floor is the room (floor ${state.floorDb.toFixed(1)} dB)`);
+});
+
+test('a dropout of digital silence does not turn room noise into practice', () => {
+  const { state } = simulate([calibrate, { ms: 5000, db: -200 }, { ms: 40000, db: ROOM_DB }]);
+  assert.equal(state.practicedMs, 0);
+});
+
 let failed = 0;
 for (const { name, fn } of tests) {
   try {

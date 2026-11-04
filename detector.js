@@ -12,7 +12,8 @@
  *    rises slowly (rate-limited) when the room gets louder, so a fan or traffic hum that
  *    never stops is eventually treated as background. While the clock runs, the floor only
  *    rises if the last 30 s were steady (median minus quietest bucket within humSpreadDb),
- *    so legato playing with quiet breaths never becomes its own floor.
+ *    so legato playing with quiet breaths never becomes its own floor. Frames of pure digital
+ *    silence (a device starting up or dropping out) leave the floor alone.
  *  - Sounding: level above floor + threshold. Once playing, a few dB of hysteresis keeps
  *    soft notes from flickering the state.
  *  - Onset: the level must stay above the trigger for minOnMs (150 ms) before the clock
@@ -145,7 +146,9 @@
     this.bucketN++;
     if (nowMs - this.bucketStart >= o.floorBucketMs) this._pushBucket(nowMs);
 
-    if (level < this.floorDb) {
+    if (level <= MIN_DB) {
+      // Digital silence is a device gap, not a quieter room: see update().
+    } else if (level < this.floorDb) {
       // Quieter room: follow down quickly (smoothed, so one dropout frame does little).
       this.floorDb += (level - this.floorDb) * (1 - Math.exp(-dt / o.floorFallTauMs));
     } else {
@@ -183,7 +186,9 @@
     this.sessionMs = Math.max(0, nowMs - this.startMs);
 
     if (!this.calibrated) {
-      this.calSamples.push(level);
+      // Audio devices often deliver pure zeros while they start up. Counting those as the
+      // room would put the floor at -100 dB and turn ordinary room noise into "playing".
+      if (level > MIN_DB) this.calSamples.push(level);
       this.bucketSum += level;
       this.bucketN++;
       if (nowMs - this.bucketStart >= o.floorBucketMs) this._pushBucket(nowMs);
