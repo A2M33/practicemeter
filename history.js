@@ -46,6 +46,8 @@
   }
 
   function clampNum(v, lo, hi, fallback) {
+    // Number('') and Number(null) are 0, which would pass as a real value.
+    if (v === null || String(v).trim() === '') return fallback;
     v = Number(v);
     if (!isFinite(v)) return fallback;
     return Math.min(hi, Math.max(lo, v));

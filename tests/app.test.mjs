@@ -306,6 +306,20 @@ test('Stop clears the level meter and keeps the clock', async () => {
   assert.notEqual(g.$('clock').textContent, '00:00:00');
 });
 
+test('clearing the goal field keeps the goal', () => {
+  const g = boot({ stored: { settings: { goalMin: 45 } } });
+  g.$('goal').value = '';
+  g.$('goal').emit('change');
+  assert.equal(g.$('goal').value, 45);
+  assert.equal(g.saved().settings.goalMin, 45);
+});
+
+test('the goal field accepts its own default, so 30 is not a step mismatch', () => {
+  const input = /<input[^>]*id="goal"[^>]*>/.exec(html)[0];
+  const [min, step, value] = ['min', 'step', 'value'].map((k) => Number(new RegExp(`${k}="(\\d+)"`).exec(input)[1]));
+  assert.equal((value - min) % step, 0);
+});
+
 // ---- tests end ----
 
 let failed = 0;

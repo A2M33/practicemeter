@@ -92,6 +92,15 @@ test('merging keeps the larger total, so a second import changes nothing', () =>
   assert.equal(mergeDays(days, imported), 0);
 });
 
+test('empty values fall back instead of counting as zero', () => {
+  assert.equal(history.clampNum('', 1, 600, 45), 45);
+  assert.equal(history.clampNum('  ', 1, 600, 45), 45);
+  assert.equal(history.clampNum(null, 0, 100, 50), 50);
+  assert.equal(history.clampNum('0', 0, 100, 50), 0);
+  assert.equal(normalise({ settings: { sensitivity: null, goalMin: '' } }).settings.sensitivity, 50);
+  assert.equal(normalise({ settings: { sensitivity: null, goalMin: '' } }).settings.goalMin, 30);
+});
+
 let failed = 0;
 for (const { name, fn } of tests) {
   try {

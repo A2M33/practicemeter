@@ -414,7 +414,7 @@
   });
 
   el.goal.addEventListener('change', function () {
-    data.settings.goalMin = Math.round(clampNum(el.goal.value, 1, 600, 30));
+    data.settings.goalMin = Math.round(clampNum(el.goal.value, 1, 600, data.settings.goalMin));
     el.goal.value = data.settings.goalMin;
     save();
     renderDaily(true);
