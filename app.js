@@ -763,15 +763,29 @@
     toggle();
   });
 
+  // Only a running session has unsaved time. An idle tab must not write here: it may hold
+  // data from before a session in another tab, and would erase that session.
+  function saveSession() {
+    if (session) save();
+  }
+
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') {
-      save();
+      saveSession();
     } else {
       if (session) requestWakeLock();
       renderDaily(false);
     }
   });
-  window.addEventListener('pagehide', save);
+  window.addEventListener('pagehide', saveSession);
+
+  window.addEventListener('storage', function (e) {
+    if (DEMO || e.key !== H.STORAGE_KEY) return;
+    data = H.adopt(data, e.newValue, session && session.entry);
+    renderSettings();
+    applyDetectorSettings();
+    renderDaily(true);
+  });
 
   // Keep the goal and history current across midnight even when idle.
   setInterval(function () { if (!session) renderDaily(false); }, 60000);

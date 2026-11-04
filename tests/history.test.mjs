@@ -140,6 +140,34 @@ test('durations carry over instead of showing 60', () => {
   assert.equal(history.shortDuration(3900000), '1 h 5 min');
 });
 
+test('an idle tab takes what another tab saved', () => {
+  const mine = normalise({ days: { '2026-10-01': 1000 } });
+  const text = JSON.stringify({ settings: { goalMin: 40 }, days: { '2026-10-02': 2000 } });
+  const d = history.adopt(mine, text, null);
+  assert.deepEqual(d.days, { '2026-10-02': 2000 });
+  assert.equal(d.settings.goalMin, 40);
+});
+
+test('a tab in a session keeps its running time when another tab saves', () => {
+  const running = { start: 5000, lengthMs: 90000, playedMs: 60000 };
+  const mine = normalise({ days: { '2026-10-01': 60000 } });
+  mine.sessions.push(running);
+  const text = JSON.stringify({
+    days: { '2026-10-01': 1000, '2026-09-30': 2000 },
+    sessions: [{ start: 1000, lengthMs: 3, playedMs: 2 }, { start: 5000, lengthMs: 3, playedMs: 2 }],
+  });
+  const d = history.adopt(mine, text, running);
+  assert.deepEqual(d.days, { '2026-10-01': 60000, '2026-09-30': 2000 });
+  assert.equal(d.sessions.length, 2);
+  assert.equal(d.sessions[1], running, 'the same object, so the session keeps updating it');
+});
+
+test('a junk storage event changes nothing', () => {
+  const mine = normalise({ days: { '2026-10-01': 1000 } });
+  assert.equal(history.adopt(mine, '{not json', null), mine);
+  assert.equal(history.adopt(mine, null, null), mine);
+});
+
 let failed = 0;
 for (const { name, fn } of tests) {
   try {

@@ -320,6 +320,56 @@ test('the goal field accepts its own default, so 30 is not a step mismatch', () 
   assert.equal((value - min) % step, 0);
 });
 
+test('a stale idle tab does not erase a session from another tab', async () => {
+  const store = new Map();
+  const idle = boot({ store });
+  const playing = boot({ store });
+  playing.$('toggle').click();
+  await flush();
+  playing.run(2500, QUIET);
+  playing.run(8000, LOUD);
+  playing.$('toggle').click();
+  const practised = playing.saved().days['2026-11-04'];
+  assert.ok(practised > 0);
+
+  // This tab never saw the storage event, as if it had been frozen in the background.
+  idle.doc.visibilityState = 'hidden';
+  idle.doc.emit('visibilitychange');
+  idle.win.emit('pagehide');
+  assert.equal(playing.saved().days['2026-11-04'], practised);
+});
+
+test('an idle tab shows what another tab saved and keeps it through its own saves', () => {
+  const g = boot({ stored: {} });
+  const text = JSON.stringify({ settings: { goalMin: 40 }, days: { '2026-11-04': 600000 } });
+  g.store.set(KEY, text);
+  g.win.emit('storage', { key: KEY, newValue: text });
+  assert.equal(g.$('today-min').textContent, '10');
+  assert.equal(g.$('goal').value, 40);
+  g.$('chime').checked = false;
+  g.$('chime').emit('change');
+  assert.equal(g.saved().days['2026-11-04'], 600000);
+});
+
+test('a running session still saves when the page hides', async () => {
+  const g = boot();
+  g.$('toggle').click();
+  await flush();
+  g.run(2500, QUIET);
+  g.run(3000, LOUD);
+  g.doc.visibilityState = 'hidden';
+  g.doc.emit('visibilitychange');
+  assert.ok(g.saved().days['2026-11-04'] > 0);
+  assert.equal(g.saved().sessions.length, 1);
+});
+
+test('demo mode ignores other tabs', () => {
+  const g = boot({ search: '?demo' });
+  const before = g.$('total-all').textContent;
+  g.win.emit('storage', { key: KEY, newValue: JSON.stringify({ days: {} }) });
+  assert.equal(g.$('total-all').textContent, before);
+});
+
 // ---- tests end ----
 
 let failed = 0;

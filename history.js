@@ -208,6 +208,22 @@
     return changed;
   }
 
+  /**
+   * Another tab saved text. Returns the data this tab carries on with. An idle tab takes it as
+   * it is. A tab in the middle of a session keeps its running row and the larger total of each
+   * day, because its own time has not reached storage yet.
+   */
+  function adopt(mine, text, running) {
+    var parsed = parse(text);
+    if (!parsed) return mine;
+    var theirs = normalise(parsed);
+    if (!running) return theirs;
+    mergeDays(theirs.days, mine.days);
+    theirs.sessions = theirs.sessions.filter(function (x) { return x.start !== running.start; });
+    theirs.sessions.push(running);
+    return theirs;
+  }
+
   return {
     STORAGE_KEY: STORAGE_KEY,
     LEGACY_KEY: LEGACY_KEY,
@@ -222,6 +238,7 @@
     totals: totals,
     toCsv: toCsv,
     parseCsv: parseCsv,
-    mergeDays: mergeDays
+    mergeDays: mergeDays,
+    adopt: adopt
   };
 }));
