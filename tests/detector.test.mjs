@@ -158,6 +158,17 @@ test('rmsDb and sensitivity helpers', () => {
   assert.equal(sensitivityToThreshold(50), 15);
 });
 
+test('a stalled tab cannot credit a long gap at the moment the clock starts', () => {
+  const det = new Detector();
+  let t = 1000;
+  det.start(t);
+  while (t < 3600) { t += FRAME_MS; det.update(ROOM_DB, t); }
+  det.update(TONE_DB, t += FRAME_MS);       // sound begins, onset timer starts
+  const state = det.update(TONE_DB, t += 60000); // the next frame arrives a minute later
+  assert.equal(state.status, 'playing');
+  assert.ok(state.practicedMs <= 2000, `credited ${state.practicedMs} ms`);
+});
+
 let failed = 0;
 for (const { name, fn } of tests) {
   try {

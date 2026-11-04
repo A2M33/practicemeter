@@ -217,7 +217,8 @@
           if (this.aboveSince === null) this.aboveSince = nowMs;
           if (nowMs - this.aboveSince >= o.minOnMs) {
             this.status = 'playing';
-            this.practicedMs += nowMs - this.aboveSince;
+            // Capped like every other step: a throttled tab can stall between these frames.
+            this.practicedMs += Math.min(nowMs - this.aboveSince, o.maxStepMs);
             this.lastAboveMs = nowMs;
           }
         } else {
