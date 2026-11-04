@@ -20,3 +20,5 @@ jobs:
         run: node tests/micwatch.test.mjs
       - name: History tests
         run: node tests/history.test.mjs
+      - name: App tests
+        run: node tests/app.test.mjs

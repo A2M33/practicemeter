@@ -1,0 +1,245 @@
+// Runs app.js against a small stand-in for the browser: a fake page built from the real
+// index.html, a fake microphone and a clock the test moves by hand.
+// Run with: node tests/app.test.mjs
+//
+// This covers the wiring around the microphone and storage. It has no layout and no real
+// audio; the detector's own logic is tested in tests/detector.test.mjs.
+import assert from 'node:assert/strict';
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import vm from 'node:vm';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const source = (file) => readFileSync(join(root, file), 'utf8');
+const html = source('index.html');
+const KEY = 'practicemeter.v2';
+
+class Emitter {
+  constructor() { this.listeners = {}; }
+  addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
+  removeEventListener(type, fn) { this.listeners[type] = (this.listeners[type] || []).filter((f) => f !== fn); }
+  emit(type, event = {}) {
+    const e = { target: this, preventDefault() { this.defaultPrevented = true; }, ...event };
+    for (const fn of this.listeners[type] || []) fn(e);
+    return e;
+  }
+}
+
+class El extends Emitter {
+  constructor(tag, attrs = {}) {
+    super();
+    this.tagName = tag.toUpperCase();
+    this.attrs = { ...attrs };
+    this.kids = [];
+    this.text = '';
+    this.style = { setProperty() {} };
+    this.hidden = 'hidden' in attrs;
+    this.disabled = false;
+    this.value = attrs.value ?? '';
+    this.checked = 'checked' in attrs;
+    this.id = attrs.id ?? '';
+    this.className = attrs.class ?? '';
+    const classes = new Set();
+    this.classList = {
+      add: (c) => classes.add(c),
+      remove: (c) => classes.delete(c),
+      contains: (c) => classes.has(c),
+      toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)),
+    };
+  }
+  get textContent() { return this.text + this.kids.map((k) => k.textContent).join(''); }
+  set textContent(v) { this.text = String(v); this.kids = []; }
+  get children() { return this.kids; }
+  getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
+  setAttribute(k, v) { this.attrs[k] = String(v); }
+  removeAttribute(k) { delete this.attrs[k]; }
+  appendChild(node) { this.kids.push(node); return node; }
+  closest(selector) { return selector.split(/,\s*/).includes(this.tagName.toLowerCase()) ? this : null; }
+  click() { return this.emit('click'); }
+}
+
+function parsePage() {
+  const all = [];
+  const body = html.slice(html.indexOf('<body'));
+  for (const tag of body.matchAll(/<([a-z][a-z0-9]*)\b((?:[^>"]|"[^"]*")*)>/g)) {
+    const attrs = {};
+    for (const a of tag[2].matchAll(/([\w-]+)(?:="([^"]*)")?/g)) attrs[a[1]] = a[2] ?? '';
+    all.push(new El(tag[1], attrs));
+  }
+  return all;
+}
+
+class FakeTrack extends Emitter {
+  constructor() { super(); this.readyState = 'live'; }
+  stop() { this.readyState = 'ended'; }
+}
+
+class FakeContext extends Emitter {
+  static made = [];
+  static failSource = false;
+  static failNew = false;
+  constructor() {
+    super();
+    if (FakeContext.failNew) throw Object.assign(new Error('too many contexts'), { name: 'NotSupportedError' });
+    this.state = 'running';
+    this.currentTime = 0;
+    this.level = 0.0001;
+    FakeContext.made.push(this);
+  }
+  createMediaStreamSource() {
+    if (FakeContext.failSource) throw Object.assign(new Error('sample rate'), { name: 'NotSupportedError' });
+    return { connect() {}, disconnect() {} };
+  }
+  createAnalyser() {
+    const ctx = this;
+    return { fftSize: 2048, getFloatTimeDomainData(buf) { buf.fill(ctx.level); } };
+  }
+  resume() { return Promise.resolve(); }
+  close() { this.state = 'closed'; return Promise.resolve(); }
+}
+
+const flush = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
+
+// Starts the app. stored is the saved data, as an object or raw string. mic decides what
+// getUserMedia does: 'grant' (default), 'hold' (the permission prompt stays up) or an error name.
+function boot({ stored, search = '', mic = 'grant', now = () => Date.parse('2026-11-04T12:00:00'), store = new Map(), wakeLock } = {}) {
+  FakeContext.made = [];
+  FakeContext.failSource = false;
+  FakeContext.failNew = false;
+  if (stored !== undefined) store.set(KEY, typeof stored === 'string' ? stored : JSON.stringify(stored));
+
+  const doc = new Emitter();
+  doc.visibilityState = 'visible';
+  doc.body = new El('body');
+  doc.createElement = (tag) => new El(tag);
+  doc.createDocumentFragment = () => new El('fragment');
+  const page = parsePage();
+  doc.getElementById = (id) => page.find((el) => el.id === id) ?? null;
+
+  const streams = [];
+  const pending = [];
+  const makeStream = () => {
+    const track = new FakeTrack();
+    const stream = { getTracks: () => [track], getAudioTracks: () => [track] };
+    streams.push(stream);
+    return stream;
+  };
+  const media = {
+    calls: 0,
+    getUserMedia() {
+      media.calls++;
+      if (mic === 'grant') return Promise.resolve(makeStream());
+      if (mic === 'hold') return new Promise((resolve) => pending.push(() => resolve(makeStream())));
+      return Promise.reject(Object.assign(new Error('nope'), { name: mic }));
+    },
+  };
+
+  const FakeDate = class extends Date {
+    constructor(...args) { if (args.length) super(...args); else super(now()); }
+    static now() { return now(); }
+  };
+
+  let clock = 1000;
+  const intervals = new Map();
+  let nextTimer = 1;
+  const win = new Emitter();
+  const sandbox = {
+    document: doc,
+    navigator: { mediaDevices: media, ...(wakeLock ? { wakeLock } : {}) },
+    console,
+    Date: FakeDate,
+    performance: { now: () => clock },
+    setTimeout,
+    clearTimeout,
+    setInterval: (fn, ms) => { intervals.set(nextTimer, { fn, ms }); return nextTimer++; },
+    clearInterval: (id) => intervals.delete(id),
+  };
+  vm.createContext(sandbox);
+  const global = vm.runInContext('this', sandbox);
+  Object.assign(sandbox, {
+    window: global,
+    addEventListener: win.addEventListener.bind(win),
+    location: { search, protocol: 'file:', pathname: '/index.html' },
+    AudioContext: FakeContext,
+    confirm: () => true,
+    localStorage: {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => store.set(k, String(v)),
+    },
+  });
+  for (const file of ['detector.js', 'micwatch.js', 'history.js', 'app.js']) {
+    vm.runInContext(source(file), sandbox, { filename: file });
+  }
+
+  const $ = (id) => doc.getElementById(id);
+  return {
+    doc, win, $, store, streams, media, pending,
+    saved: () => JSON.parse(store.get(KEY)),
+    liveTracks: () => streams.flatMap((s) => s.getTracks()).filter((t) => t.readyState === 'live').length,
+    space(extra = {}) {
+      return doc.emit('keydown', { code: 'Space', key: ' ', target: doc.body, repeat: false, ...extra });
+    },
+    // Moves the clock on, firing the 40 ms analysis tick along the way.
+    run(ms, level) {
+      if (level !== undefined) FakeContext.made.at(-1).level = level;
+      const end = clock + ms;
+      while (clock < end) {
+        clock += 40;
+        for (const { fn, ms: every } of [...intervals.values()]) if (every === 40) fn();
+      }
+    },
+    fireIntervals(every) {
+      for (const t of [...intervals.values()]) if (t.ms === every) t.fn();
+    },
+    get contexts() { return FakeContext.made; },
+    intervals,
+  };
+}
+
+const QUIET = 0.0001; // -80 dB
+const LOUD = 0.05;    // -26 dB
+
+const tests = [];
+const test = (name, fn) => tests.push({ name, fn });
+
+test('a session counts played time, saves it and lists it', async () => {
+  const g = boot();
+  g.$('toggle').click();
+  await flush();
+  assert.equal(g.$('toggle').textContent, 'Stop');
+  g.run(2500, QUIET);
+  g.run(10000, LOUD);
+  g.run(200, QUIET);
+  g.$('toggle').click();
+  assert.equal(g.$('toggle').textContent, 'Start');
+  assert.equal(g.liveTracks(), 0, 'the microphone is released');
+  assert.equal(g.contexts[0].state, 'closed');
+  const saved = g.saved();
+  assert.equal(saved.sessions.length, 1);
+  assert.ok(saved.sessions[0].playedMs >= 9500, `played ${saved.sessions[0].playedMs}`);
+  assert.equal(saved.days['2026-11-04'], saved.sessions[0].playedMs);
+  assert.equal(g.$('session-rows').children.length, 1);
+});
+
+test('corrupt saves still give a working page', () => {
+  for (const stored of ['{not json', 'null', '7', '[]', { settings: 'x', days: 3, sessions: {} }]) {
+    const g = boot({ stored });
+    assert.equal(g.$('goal-min').textContent, '30', `defaults for ${JSON.stringify(stored)}`);
+  }
+});
+
+// ---- tests end ----
+
+let failed = 0;
+for (const { name, fn } of tests) {
+  try {
+    await fn();
+    console.log(`ok   ${name}`);
+  } catch (err) {
+    failed++;
+    console.log(`FAIL ${name}\n     ${err.message}`);
+  }
+}
+console.log(`\n${tests.length - failed}/${tests.length} passed`);
+process.exit(failed ? 1 : 0);

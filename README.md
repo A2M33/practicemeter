@@ -70,6 +70,7 @@ Run the tests with Node 18 or newer:
 node tests/detector.test.mjs
 node tests/micwatch.test.mjs
 node tests/history.test.mjs
+node tests/app.test.mjs
 ```
 
 ## License
