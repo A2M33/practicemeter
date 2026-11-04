@@ -544,6 +544,21 @@
   /* ---------- microphone session ---------- */
 
   var session = null;
+  var starting = false; // waiting for the browser to hand over the microphone
+
+  /**
+   * Not the disabled attribute: disabling the button under the keyboard focus drops the
+   * focus to the top of the page.
+   */
+  function setStarting(on) {
+    starting = on;
+    if (on) {
+      el.toggle.setAttribute('aria-disabled', 'true');
+      setStatus('idle', 'Waiting for the microphone…');
+    } else {
+      el.toggle.removeAttribute('aria-disabled');
+    }
+  }
 
   function micErrorMessage(err) {
     var name = err && err.name;
@@ -590,7 +605,7 @@
 
     // Create the audio context inside the click so mobile browsers allow it to run.
     var ctx = new AC();
-    el.toggle.disabled = true;
+    setStarting(true);
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
     }).then(function (stream) {
@@ -633,16 +648,17 @@
         tick(); // credit the last frames before closing
         stop(function (st) { return micLostMessage(reason, st.practicedMs); });
       });
+      setStarting(false);
       setRunningUi(true);
-      el.toggle.disabled = false;
       requestWakeLock();
       announce('Session started. Stay quiet for ' + Math.round(D.DEFAULTS.calibrationMs / 1000) +
         ' seconds while practicemeter measures the room.');
       tick();
     }).catch(function (err) {
       ctx.close().catch(function () {});
-      el.toggle.disabled = false;
+      setStarting(false);
       setRunningUi(false);
+      setStatus('idle');
       showNotice(micErrorMessage(err));
     });
   }
@@ -720,6 +736,7 @@
   }
 
   function toggle() {
+    if (starting) return;
     if (session) stop(); else start();
   }
 

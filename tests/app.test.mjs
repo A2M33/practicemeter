@@ -229,6 +229,46 @@ test('corrupt saves still give a working page', () => {
   }
 });
 
+test('Space pressed again during the permission prompt does not open a second microphone', async () => {
+  const g = boot({ mic: 'hold' });
+  g.space();
+  g.space();
+  g.$('toggle').click();
+  assert.equal(g.media.calls, 1);
+  assert.equal(g.contexts.length, 1);
+  assert.equal(g.$('status-label').textContent, 'Waiting for the microphone…');
+  g.pending[0]();
+  await flush();
+  assert.equal(g.$('toggle').textContent, 'Stop');
+  g.space();
+  assert.equal(g.liveTracks(), 0, 'one Stop releases the only stream');
+});
+
+test('the Start button stays focusable while the microphone starts', async () => {
+  const g = boot({ mic: 'hold' });
+  g.$('toggle').click();
+  assert.equal(g.$('toggle').disabled, false);
+  assert.equal(g.$('toggle').getAttribute('aria-disabled'), 'true');
+  g.pending[0]();
+  await flush();
+  assert.equal(g.$('toggle').getAttribute('aria-disabled'), null);
+});
+
+test('a refused microphone explains itself and can be tried again', async () => {
+  for (const [name, text] of [['NotAllowedError', /access was blocked/], ['NotFoundError', /No microphone/], ['NotReadableError', /busy/], ['AbortError', /could not be started/]]) {
+    const g = boot({ mic: name });
+    g.$('toggle').click();
+    await flush();
+    assert.match(g.$('notice').textContent, text);
+    assert.equal(g.$('notice').hidden, false);
+    assert.equal(g.$('toggle').textContent, 'Start');
+    assert.equal(g.$('status-label').textContent, 'Ready');
+    assert.equal(g.contexts[0].state, 'closed');
+    g.$('toggle').click();
+    assert.equal(g.media.calls, 2);
+  }
+});
+
 // ---- tests end ----
 
 let failed = 0;

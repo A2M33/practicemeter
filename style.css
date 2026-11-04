@@ -207,7 +207,7 @@ button { font: inherit; cursor: pointer; }
 .primary:active { transform: scale(.97); }
 .primary.running { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
 .primary.running:hover { background: var(--surface-2); }
-.primary:disabled { opacity: .6; cursor: progress; }
+.primary[aria-disabled="true"] { opacity: .6; cursor: progress; }
 .hint { color: var(--muted); font-size: .82rem; }
 kbd {
   font: 600 .75rem var(--sans);
