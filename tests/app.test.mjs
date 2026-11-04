@@ -394,6 +394,18 @@ test('a wake lock that arrives after Stop is released', async () => {
   assert.equal(released, 1);
 });
 
+test('the service worker caches every file the page and manifest use', () => {
+  const sw = source('sw.js');
+  const cached = [.../var FILES = \[([\s\S]*?)\];/.exec(sw)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  const missing = cached.filter((f) => f !== './' && !existsSync(join(root, f)));
+  assert.deepEqual(missing, []);
+  const used = [...html.matchAll(/\s(?:href|src)="([^"#?:]+)"/g)].map((m) => m[1]);
+  const icons = JSON.parse(source('manifest.webmanifest')).icons.map((i) => i.src);
+  assert.deepEqual([...used, ...icons].filter((f) => !cached.includes(f)), []);
+  assert.match(sw, /cache: 'reload'/, 'install fetches past the HTTP cache');
+  assert.match(sw, /event\.waitUntil\(caches\.open/, 'cache writes finish before the worker stops');
+});
+
 // ---- tests end ----
 
 let failed = 0;

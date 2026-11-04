@@ -8,7 +8,7 @@
  */
 'use strict';
 
-var CACHE = 'practicemeter-v1';
+var CACHE = 'practicemeter-v2';
 var FILES = [
   './',
   'index.html',
@@ -27,7 +27,11 @@ var FILES = [
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE)
-      .then(function (cache) { return cache.addAll(FILES); })
+      .then(function (cache) {
+        // Past the HTTP cache: GitHub Pages lets browsers keep files for 10 minutes, which
+        // could put an old file into the new cache.
+        return cache.addAll(FILES.map(function (file) { return new Request(file, { cache: 'reload' }); }));
+      })
       .then(function () { return self.skipWaiting(); })
   );
 });
@@ -51,7 +55,8 @@ self.addEventListener('fetch', function (event) {
     fetch(req).then(function (res) {
       if (res.ok && res.type === 'basic') {
         var copy = res.clone();
-        caches.open(CACHE).then(function (cache) { return cache.put(key, copy); });
+        // waitUntil keeps the worker alive until the copy is written.
+        event.waitUntil(caches.open(CACHE).then(function (cache) { return cache.put(key, copy); }));
       }
       return res;
     }).catch(function () {
