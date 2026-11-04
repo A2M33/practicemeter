@@ -71,23 +71,14 @@
   var dayKey = H.dayKey;
   var addDays = H.addDays;
   var clampNum = H.clampNum;
+  var hoursMinutes = H.hoursMinutes;
+  var shortDuration = H.shortDuration;
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
   function hms(ms) {
     var s = Math.max(0, Math.floor(ms / 1000));
     return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60);
-  }
-
-  function hoursMinutes(min) {
-    var h = Math.floor(min / 60);
-    var m = Math.round(min % 60);
-    return h ? h + ' h ' + m + ' min' : m + ' min';
-  }
-
-  /** "45 s", "26 min", "1 h 5 min". */
-  function shortDuration(ms) {
-    return ms < 60000 ? Math.round(ms / 1000) + ' s' : hoursMinutes(Math.floor(ms / 60000));
   }
 
   /* ---------- storage (format and migration live in history.js) ---------- */
@@ -291,7 +282,7 @@
       var sr = document.createElement('span');
       sr.className = 'visually-hidden';
       sr.textContent = day.date.toLocaleDateString('en', { weekday: 'long', day: 'numeric', month: 'short' }) +
-        (day.today ? ' (today)' : '') + ': ' + shown + ' minutes' + (isMet ? ', goal met' : '');
+        (day.today ? ' (today)' : '') + ': ' + shown + (shown === 1 ? ' minute' : ' minutes') + (isMet ? ', goal met' : '');
 
       var value = document.createElement('span');
       value.className = 'bar-value';

@@ -129,6 +129,17 @@ test('CSV from a German spreadsheet keeps its decimals', () => {
   assert.equal(parsed.skipped, 0);
 });
 
+test('durations carry over instead of showing 60', () => {
+  assert.equal(history.hoursMinutes(119.7), '2 h 0 min');
+  assert.equal(history.hoursMinutes(59.6), '1 h 0 min');
+  assert.equal(history.hoursMinutes(65), '1 h 5 min');
+  assert.equal(history.hoursMinutes(26), '26 min');
+  assert.equal(history.shortDuration(59600), '59 s');
+  assert.equal(history.shortDuration(0), '0 min');
+  assert.equal(history.shortDuration(45000), '45 s');
+  assert.equal(history.shortDuration(3900000), '1 h 5 min');
+});
+
 let failed = 0;
 for (const { name, fn } of tests) {
   try {

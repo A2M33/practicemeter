@@ -62,6 +62,19 @@
     return Math.min(hi, Math.max(lo, v));
   }
 
+  /** "26 min", "1 h 5 min". Rounds first, so 119.7 minutes is 2 h 0 min. */
+  function hoursMinutes(min) {
+    var total = Math.round(min);
+    var h = Math.floor(total / 60);
+    return h ? h + ' h ' + (total % 60) + ' min' : total + ' min';
+  }
+
+  /** "0 min", "45 s", "26 min", "1 h 5 min". */
+  function shortDuration(ms) {
+    if (ms < 1000) return '0 min';
+    return ms < 60000 ? Math.floor(ms / 1000) + ' s' : hoursMinutes(Math.floor(ms / 60000));
+  }
+
   function defaultData() {
     return {
       version: 2,
@@ -201,6 +214,8 @@
     dayKey: dayKey,
     addDays: addDays,
     clampNum: clampNum,
+    hoursMinutes: hoursMinutes,
+    shortDuration: shortDuration,
     defaultData: defaultData,
     normalise: normalise,
     load: load,
