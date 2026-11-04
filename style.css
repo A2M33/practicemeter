@@ -203,12 +203,16 @@ button { font: inherit; cursor: pointer; }
   font-size: 1.1rem; font-weight: 650; letter-spacing: .02em;
   transition: transform .12s ease, background-color .2s ease;
 }
-.primary:hover { background: var(--accent); }
 .primary:active { transform: scale(.97); }
 .primary.running { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
-.primary.running:hover { background: var(--surface-2); }
+/* Touch screens keep :hover after a tap, which would leave Start painted green after Stop. */
+@media (hover: hover) {
+  .primary:hover { background: var(--accent); }
+  .primary.running:hover { background: var(--surface-2); }
+}
 .primary[aria-disabled="true"] { opacity: .6; cursor: progress; }
 .hint { color: var(--muted); font-size: .82rem; }
+@media (hover: none) { .hint { display: none; } } /* phones have no Space key to press */
 kbd {
   font: 600 .75rem var(--sans);
   padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
