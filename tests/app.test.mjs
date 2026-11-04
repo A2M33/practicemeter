@@ -381,6 +381,19 @@ test('the demo keeps counting after Reset history', () => {
   assert.doesNotMatch(g.$('history-total').textContent, /NaN/);
 });
 
+test('a wake lock that arrives after Stop is released', async () => {
+  let released = 0;
+  let grant;
+  const lock = Object.assign(new Emitter(), { release() { released++; return Promise.resolve(); } });
+  const g = boot({ wakeLock: { request: () => new Promise((resolve) => { grant = () => resolve(lock); }) } });
+  g.$('toggle').click();
+  await flush();
+  g.$('toggle').click();
+  grant();
+  await flush();
+  assert.equal(released, 1);
+});
+
 // ---- tests end ----
 
 let failed = 0;

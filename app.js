@@ -526,8 +526,13 @@
   var wakeLock = null;
 
   function requestWakeLock() {
-    if (!('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+    if (!('wakeLock' in navigator) || document.visibilityState !== 'visible' || wakeLock) return;
     navigator.wakeLock.request('screen').then(function (lock) {
+      // The session can end while the browser is still answering.
+      if (!session) {
+        lock.release().catch(function () {});
+        return;
+      }
       wakeLock = lock;
       lock.addEventListener('release', function () { if (wakeLock === lock) wakeLock = null; });
     }).catch(function () { /* not allowed (battery saver etc.): carry on without it */ });
