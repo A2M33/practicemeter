@@ -821,7 +821,7 @@
     var practiced = 21 * 60000 + 46000;
     var sessionMs = 26 * 60000 + 10000;
     var todayKey = dayKey(new Date());
-    data.days[todayKey] += practiced;
+    data.days[todayKey] = (data.days[todayKey] || 0) + practiced;
     var t = 0;
     var floor = -66;
     var trigger = floor + D.sensitivityToThreshold(data.settings.sensitivity);
@@ -830,7 +830,7 @@
       t += TICK_MS;
       practiced += TICK_MS;
       sessionMs += TICK_MS;
-      data.days[todayKey] += TICK_MS;
+      data.days[todayKey] = (data.days[todayKey] || 0) + TICK_MS; // Reset history empties days
       if (!celebrated && data.days[todayKey] >= goalMs() && data.days[todayKey] - TICK_MS < goalMs()) {
         celebrated = true;
         celebrate(null); // no audio context in the demo, so the ring only

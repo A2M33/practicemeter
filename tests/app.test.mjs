@@ -370,6 +370,17 @@ test('demo mode ignores other tabs', () => {
   assert.equal(g.$('total-all').textContent, before);
 });
 
+test('the demo keeps counting after Reset history', () => {
+  const g = boot({ search: '?demo' });
+  g.$('reset').click();
+  const frame = [...g.intervals.values()].find((t) => t.ms === 40).fn;
+  frame();
+  g.$('goal').value = '35';
+  g.$('goal').emit('change');
+  assert.doesNotMatch(g.$('total-all').textContent, /NaN/);
+  assert.doesNotMatch(g.$('history-total').textContent, /NaN/);
+});
+
 // ---- tests end ----
 
 let failed = 0;
