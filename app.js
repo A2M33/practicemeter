@@ -333,7 +333,8 @@
       : d.toLocaleDateString('en', d.getFullYear() === today.getFullYear()
         ? { weekday: 'short', day: 'numeric', month: 'short' }
         : { day: 'numeric', month: 'short', year: 'numeric' });
-    return day + ', ' + d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' });
+    // No-break spaces inside the time, so a wrapped cell breaks after the comma, not before PM.
+    return day + ', ' + d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, ' ');
   }
 
   function renderSessions() {

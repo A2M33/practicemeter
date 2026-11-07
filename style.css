@@ -320,7 +320,9 @@ kbd {
 .session-table th:first-child, .session-table td:first-child { text-align: left; padding-left: 0; }
 .session-table th:last-child, .session-table td:last-child { padding-right: 0; }
 .session-table thead th { color: var(--muted); font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding-top: 0; }
-.session-table tbody th { font-weight: 500; }
+/* The start date may wrap, so the table stays inside its card on small phones and with
+   large text. It only wraps when the row would not fit otherwise. */
+.session-table tbody th { font-weight: 500; white-space: normal; }
 .session-table tbody tr:last-child > * { border-bottom: 0; }
 .sessions-empty { color: var(--muted); font-size: .92rem; max-width: 46ch; }
 #sessions-more { margin-top: 12px; }
@@ -392,9 +394,8 @@ input[type="number"] {
   .session-stats, .meter-wrap, .actions { margin-top: 12px; }
 }
 
-/* Smallest phones: the date in the first column wraps, so the table stays inside its card. */
+/* Smallest phones */
 @media (max-width: 360px) {
-  .session-table tbody th { white-space: normal; }
   .totals dt { font-size: .68rem; letter-spacing: .04em; }
   .totals dd { font-size: 1rem; white-space: nowrap; }
 }
