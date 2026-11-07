@@ -163,8 +163,8 @@
   }
 
   /** "Stay quiet, measuring the room… 2", counting down the seconds of calibration. */
-  function calibratingLabel(sessionMs) {
-    var left = Math.max(1, Math.ceil((D.DEFAULTS.calibrationMs - sessionMs) / 1000));
+  function calibratingLabel(st) {
+    var left = Math.max(1, Math.ceil(st.calibrationLeftMs / 1000));
     return STATUS_TEXT.calibrating + ' ' + left;
   }
 
@@ -173,7 +173,7 @@
   }
 
   function renderLive(st) {
-    setStatus(st.status, st.status === 'calibrating' ? calibratingLabel(st.sessionMs) : null);
+    setStatus(st.status, st.status === 'calibrating' ? calibratingLabel(st) : null);
     el.clock.textContent = hms(st.practicedMs);
     el.sessionTime.textContent = hms(st.sessionMs);
     el.efficiency.textContent = st.sessionMs >= 5000

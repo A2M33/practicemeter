@@ -7,7 +7,8 @@
  * and as a CommonJS module for the Node tests.
  *
  * Model:
- *  - Noise floor: set from the first ~2 s after start (calibration), then tracked as a low
+ *  - Noise floor: set from the first ~2 s of sound after start (calibration; the zeros a
+ *    device sends while it starts up don't count towards those 2 s), then tracked as a low
  *    percentile of the last 30 s of levels. It falls quickly when the room gets quieter and
  *    rises slowly (rate-limited) when the room gets louder, so a fan or traffic hum that
  *    never stops is eventually treated as background. While the clock runs, the floor only
@@ -105,6 +106,7 @@
     this.windowSpreadDb = Infinity;
     this.calibrated = false;
     this.calSamples = [];
+    this.calFromMs = null;
     this.buckets = [];
     this.bucketStart = 0;
     this.bucketSum = 0;
@@ -169,7 +171,8 @@
    * @param {number} levelDb  RMS level of the frame in dBFS
    * @param {number} nowMs    monotonic timestamp in ms
    * @returns {{status:string, playing:boolean, holding:boolean, calibrating:boolean,
-   *            practicedMs:number, sessionMs:number, levelDb:number, floorDb:number, triggerDb:number}}
+   *            practicedMs:number, sessionMs:number, levelDb:number, floorDb:number, triggerDb:number,
+   *            calibrationLeftMs:number}}
    *   status is 'calibrating' | 'playing' | 'holding' (inside the grace period) | 'paused'.
    *   playing is true while playing or holding, i.e. while the clock is not paused.
    */
@@ -188,11 +191,16 @@
     if (!this.calibrated) {
       // Audio devices often deliver pure zeros while they start up. Counting those as the
       // room would put the floor at -100 dB and turn ordinary room noise into "playing".
-      if (level > MIN_DB) this.calSamples.push(level);
+      // The measurement therefore runs for calibrationMs from the first real sound, however
+      // long the zeros last.
+      if (level > MIN_DB) {
+        if (this.calFromMs === null) this.calFromMs = nowMs;
+        this.calSamples.push(level);
+      }
       this.bucketSum += level;
       this.bucketN++;
       if (nowMs - this.bucketStart >= o.floorBucketMs) this._pushBucket(nowMs);
-      if (this.sessionMs < o.calibrationMs) {
+      if (this.calFromMs === null || nowMs - this.calFromMs < o.calibrationMs) {
         this.status = 'calibrating';
         return this.snapshot();
       }
@@ -271,7 +279,10 @@
       floorDb: this.floorDb,
       triggerDb: this.calibrated
         ? this.floorDb + this.opts.thresholdDb - (active ? this.opts.hysteresisDb : 0)
-        : null
+        : null,
+      calibrationLeftMs: this.calibrated ? 0
+        : this.calFromMs === null ? this.opts.calibrationMs
+        : Math.max(0, this.opts.calibrationMs - (this.lastMs - this.calFromMs))
     };
   };
 

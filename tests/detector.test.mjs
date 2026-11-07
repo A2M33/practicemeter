@@ -176,6 +176,18 @@ test('zeros from a microphone that is still starting up do not lower the floor',
   assert.ok(state.floorDb > -75, `floor is the room (floor ${state.floorDb.toFixed(1)} dB)`);
 });
 
+test('a microphone that sends only zeros through the first seconds is still measured', () => {
+  // Regression: with zeros for the whole calibration the floor stayed at -100 dB and about
+  // 40 s of room noise counted as practice before the floor caught up.
+  const { state, timeline } = simulate([{ ms: 4000, db: -200 }, { ms: 60000, db: ROOM_DB }]);
+  assert.equal(state.practicedMs, 0);
+  assert.ok(timeline.every((f) => !f.playing), 'room noise never counted');
+  const done = timeline.find((f) => !f.calibrating);
+  near(done.t - 1000, 6000, 80, 'calibration ends 2 s after the first real sound');
+  assert.ok(timeline.filter((f) => f.t - 1000 <= 4000).every((f) => f.calibrationLeftMs === 2000),
+    'the countdown waits while the device sends zeros');
+});
+
 test('a dropout of digital silence does not turn room noise into practice', () => {
   const { state } = simulate([calibrate, { ms: 5000, db: -200 }, { ms: 40000, db: ROOM_DB }]);
   assert.equal(state.practicedMs, 0);
