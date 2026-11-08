@@ -6,11 +6,12 @@
   <title>practicemeter: a practice timer that only counts while you play</title>
   <meta name="description" content="A practice timer for musicians. It listens through the microphone and only counts the time your instrument is actually sounding.">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f3f0e8" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#121513" media="(prefers-color-scheme: dark)">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icon-maskable-512.png">
+  <meta name="theme-color" content="#e3e5e0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b211e" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="icon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,11 +19,7 @@
 
   <header class="masthead">
     <div class="brand">
-      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-        <path d="M9 28 L16 4 L23 28 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M16 22 L21 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="19.4" cy="13.2" r="2.2" fill="currentColor"/>
-      </svg>
+      <img class="mark" src="icon-192.png" width="40" height="40" alt="">
       <h1>practicemeter</h1>
     </div>
     <div class="masthead-side">
@@ -32,18 +29,18 @@
   </header>
 
   <main class="layout">
-    <section class="card stage" aria-labelledby="stage-title" data-status="idle" id="stage">
+    <section class="panel stage" aria-labelledby="stage-title" data-status="idle" id="stage">
       <h2 id="stage-title" class="visually-hidden">Practice clock</h2>
 
       <div class="status">
-        <span class="status-dot" aria-hidden="true"></span>
+        <span class="lamp" aria-hidden="true"></span>
         <span id="status-label">Ready</span>
       </div>
       <!-- Screen readers hear lasting changes only (start, stop, goal), not every play/pause flip. -->
       <p class="visually-hidden" id="announce" role="status" aria-live="polite" aria-atomic="true"></p>
 
       <p class="clock" id="clock" role="timer" aria-label="Practice time this session">00:00:00</p>
-      <p class="clock-caption">practiced this session</p>
+      <p class="clock-caption">Practiced this session</p>
 
       <dl class="session-stats">
         <div>
@@ -74,14 +71,14 @@
       </div>
 
       <div class="actions">
-        <button type="button" class="primary" id="toggle" aria-keyshortcuts="Space">Start</button>
+        <button type="button" class="btn primary" data-variant="primary" id="toggle" aria-keyshortcuts="Space">Start</button>
         <span class="hint" aria-hidden="true"><kbd>Space</kbd> starts and stops</span>
       </div>
 
       <div class="notice" id="notice" role="alert" hidden></div>
     </section>
 
-    <section class="card goal" aria-labelledby="goal-title" id="goal-card">
+    <section class="panel goal" aria-labelledby="goal-title" id="goal-card">
       <h2 id="goal-title">Today</h2>
       <div class="goal-body">
         <svg class="ring" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
@@ -97,19 +94,19 @@
       </div>
     </section>
 
-    <section class="card history" aria-labelledby="history-title">
-      <div class="card-head">
+    <section class="panel history" aria-labelledby="history-title">
+      <div class="panel-head">
         <h2 id="history-title">Last 14 days</h2>
         <p class="history-total" id="history-total"></p>
       </div>
       <div class="chart">
-        <div class="goal-line" id="goal-line" aria-hidden="true"><span>goal</span></div>
+        <div class="goal-line" id="goal-line" aria-hidden="true"><span>Goal</span></div>
         <ol class="bars" id="bars" aria-label="Minutes practiced per day, oldest first"></ol>
         <p class="chart-empty" id="chart-empty" hidden>Your days fill in here after your first session. <a href="?demo">Try the demo</a> to see two weeks of sample practice.</p>
       </div>
     </section>
 
-    <section class="card sessions" aria-labelledby="sessions-title">
+    <section class="panel sessions" aria-labelledby="sessions-title">
       <h2 id="sessions-title">History</h2>
       <dl class="totals">
         <div><dt>Past 7 days</dt><dd id="total-week">0 min</dd></div>
@@ -125,11 +122,11 @@
           <tbody id="session-rows"></tbody>
         </table>
         <p class="sessions-empty" id="sessions-empty">Each session you finish gets a row here with its length, the time you played and your efficiency.</p>
-        <button type="button" class="secondary" id="sessions-more" aria-controls="session-table" hidden>Show all</button>
+        <button type="button" class="btn secondary" id="sessions-more" aria-controls="session-table" hidden>Show all</button>
       </div>
     </section>
 
-    <section class="card settings" aria-labelledby="settings-title">
+    <section class="panel settings" aria-labelledby="settings-title">
       <h2 id="settings-title">Settings</h2>
       <div class="field">
         <label for="sensitivity">Sensitivity</label>
@@ -149,10 +146,10 @@
         <label class="check"><input type="checkbox" id="chime" checked> Chime when I reach it</label>
       </div>
       <div class="data-actions">
-        <button type="button" class="secondary" id="export">Export CSV</button>
-        <button type="button" class="secondary" id="import">Import CSV</button>
+        <button type="button" class="btn secondary" id="export">Export CSV</button>
+        <button type="button" class="btn secondary" id="import">Import CSV</button>
         <input type="file" id="import-file" accept=".csv,text/csv" hidden>
-        <button type="button" class="secondary danger" id="reset">Reset history</button>
+        <button type="button" class="btn secondary danger" id="reset">Reset history</button>
         <p class="data-status" id="data-status" role="status"></p>
       </div>
     </section>

@@ -406,10 +406,11 @@ test('the service worker caches every file the page and manifest use', () => {
   assert.match(sw, /event\.waitUntil\(caches\.open/, 'cache writes finish before the worker stops');
 });
 
-test('status text keeps 4.5:1 on its pill in the light theme', () => {
-  const css = source('style.css');
-  const vars = /:root\s*\{([\s\S]*?)\}/.exec(css)[1];
-  const color = (name) => /#[0-9a-f]{6}/i.exec(new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i').exec(vars)[1])[0];
+test('text keeps 4.5:1 on every surface in both themes', () => {
+  const tokens = source('tokens.css');
+  const block = (re) => re.exec(tokens)[1];
+  const light = block(/:root\s*\{([\s\S]*?)\}/);
+  const dark = block(/prefers-color-scheme:\s*dark\)\s*\{\s*:root\s*\{([\s\S]*?)\}/);
   const luminance = (hex) => {
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
       .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
@@ -419,10 +420,23 @@ test('status text keeps 4.5:1 on its pill in the light theme', () => {
     const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
     return (hi + 0.05) / (lo + 0.05);
   };
-  for (const state of ['accent', 'hold', 'rest']) {
-    const pair = [color(state), color(state === 'accent' ? 'accent-soft' : `${state}-soft`)];
-    assert.ok(contrast(...pair) >= 4.5, `${state}: ${contrast(...pair).toFixed(2)}`);
+  for (const [theme, vars] of [['light', light], ['dark', dark]]) {
+    const color = (name) => new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i').exec(vars)[1];
+    // Labels and values sit on the page, on panels and on the notice and kbd wells (cab).
+    for (const [fg, bg] of [['ink', 'panel'], ['ink', 'cab'], ['ink-2', 'panel'], ['ink-2', 'cab'],
+      ['steel', 'panel'], ['panel', 'ink']]) {
+      const c = contrast(color(fg), color(bg));
+      assert.ok(c >= 4.5, `${theme} ${fg} on ${bg}: ${c.toFixed(2)}`);
+    }
+    // Red is only a graphic (the fault lamp, the notice edge), so it needs 3:1, not 4.5:1.
+    const fault = contrast(color('fault'), color('panel'));
+    assert.ok(fault >= 3, `${theme} fault on panel: ${fault.toFixed(2)}`);
   }
+});
+
+test('style.css takes every colour from tokens.css', () => {
+  const css = source('style.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.deepEqual(css.match(/#[0-9a-f]{3,8}|rgba?\(|hsla?\(/gi), null);
 });
 
 // ---- tests end ----

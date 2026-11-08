@@ -8,20 +8,26 @@
  */
 'use strict';
 
-var CACHE = 'practicemeter-v2';
+var CACHE = 'practicemeter-v3';
 var FILES = [
   './',
   'index.html',
+  'tokens.css',
   'style.css',
+  'fonts/Barlow-Regular.woff2',
+  'fonts/Barlow-Medium.woff2',
+  'fonts/Barlow-SemiBold.woff2',
+  'fonts/BarlowSemiCondensed-Medium.woff2',
+  'fonts/BarlowSemiCondensed-SemiBold.woff2',
   'detector.js',
   'micwatch.js',
   'history.js',
   'app.js',
   'manifest.webmanifest',
-  'icon.svg',
+  'icon-32.png',
+  'icon-180.png',
   'icon-192.png',
-  'icon-512.png',
-  'icon-maskable-512.png'
+  'icon-512.png'
 ];
 
 self.addEventListener('install', function (event) {

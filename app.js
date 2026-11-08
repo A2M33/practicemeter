@@ -107,14 +107,17 @@
 
   /* ---------- notices ---------- */
 
-  function showNotice(text) {
+  /** fault marks a microphone problem: the status lamp turns red until the next Start. */
+  function showNotice(text, fault) {
     el.notice.textContent = text;
     el.notice.hidden = false;
+    if (fault) el.stage.setAttribute('data-fault', 'mic');
   }
 
   function hideNotice() {
     el.notice.hidden = true;
     el.notice.textContent = '';
+    el.stage.removeAttribute('data-fault');
   }
 
   /* ---------- screen reader announcements ---------- */
@@ -605,7 +608,7 @@
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !AC) {
       showNotice('This browser won’t share the microphone with this page. Open practicemeter over https ' +
-        '(the GitHub Pages address) or from localhost, in a current version of Chrome, Edge, Firefox or Safari.');
+        '(the GitHub Pages address) or from localhost, in a current version of Chrome, Edge, Firefox or Safari.', true);
       return;
     }
 
@@ -614,7 +617,7 @@
     try {
       ctx = new AC();
     } catch (err) {
-      showNotice(micErrorMessage(err));
+      showNotice(micErrorMessage(err), true);
       return;
     }
     var stream = null;
@@ -675,7 +678,7 @@
       setStarting(false);
       setRunningUi(false);
       setStatus('idle');
-      showNotice(micErrorMessage(err));
+      showNotice(micErrorMessage(err), true);
     });
   }
 
@@ -746,7 +749,7 @@
     setStatus('stopped');
     renderDaily(true);
     if (typeof notice === 'function') {
-      showNotice(notice(st)); // the notice is an alert, so it is read out on its own
+      showNotice(notice(st), true); // the notice is an alert, so it is read out on its own
     } else {
       announce('Session stopped. ' + spokenDuration(st.practicedMs) + ' practiced.');
     }
