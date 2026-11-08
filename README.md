@@ -1,16 +1,22 @@
-<p align="center"><img src="docs/header.svg" alt="practicemeter" width="100%"></p>
+![practicemeter banner: the app icon and name with the line "A practice timer for musicians. It listens through the microphone and counts only the time your instrument sounds." Beside it an amber lamp marked Playing, a clock at 00:24:18 and a level meter past its threshold tick. Four readings below: 150 ms, the shortest sound that counts; 3 s, the gap that still counts (1 to 10); 6 to 24 dB above the room, set by sensitivity; 0 bytes of audio recorded or uploaded.](docs/banner.png)
 
-<p align="center">
-  <a href="https://a2m33.github.io/practicemeter/"><img alt="Try it" src="https://img.shields.io/badge/try%20it-a2m33.github.io%2Fpracticemeter-1f6feb"></a>
-  <a href="https://github.com/A2M33/practicemeter/actions/workflows/test.yml"><img alt="tests" src="https://github.com/A2M33/practicemeter/actions/workflows/test.yml/badge.svg"></a>
-  <a href="https://github.com/A2M33/practicemeter/blob/main/LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-3fb950"></a>
-</p>
+# practicemeter
+
+[![test](https://github.com/A2M33/practicemeter/actions/workflows/test.yml/badge.svg)](https://github.com/A2M33/practicemeter/actions/workflows/test.yml)
 
 practicemeter is a practice timer for musicians that counts the time your instrument makes sound. Put your phone on the music stand, press Start and play. Stop to talk to your teacher or read a message, and the clock stops with you.
 
 **Try it:** https://a2m33.github.io/practicemeter/
 
-![practicemeter showing a running session, the daily goal ring, two weeks of practice history and the list of past sessions](docs/screenshot.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-desktop-dark.png">
+  <img src="docs/screenshot-desktop-light.png" alt="practicemeter on a desktop browser during a real session: an amber lamp marked Playing, the clock at 00:00:09 practiced, 00:00:13 of session at 71% efficiency, and the microphone level filling past the threshold tick. Beside it, today's ring at 18 of 30 minutes with a 4-day streak, and a bar chart of the last 14 days with the minutes over each bar and a dashed goal line.">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-mobile-dark.png">
+  <img src="docs/screenshot-mobile-light.png" width="300" alt="The same session on a 390 px wide phone: the Playing lamp, the clock, session length and efficiency, the level meter, the Stop button and today's goal ring stacked in one column.">
+</picture>
 
 ## The idea
 
@@ -20,7 +26,7 @@ At the end of a session you see how long you sat there and how long you played. 
 
 ## Features
 
-- A big practice clock with three states: Playing, Short pause and Paused. Each state has its own label and shape as well as a colour.
+- A big practice clock with three states: Playing, Short pause and Paused. Each state has its own label, and a status lamp shows it too: amber while the clock counts, an amber ring during a short pause, grey when paused.
 - Session length and efficiency next to the clock
 - A live level meter with the threshold line, so you can see what the app hears
 - A sensitivity slider. Raise it for quiet instruments or a distant phone and lower it in a noisy room.
@@ -31,7 +37,7 @@ At the end of a session you see how long you sat there and how long you played. 
 - A list of past sessions with the start time, length, minutes played and efficiency, plus your totals for the past 7 days, the past 30 days and all time
 - CSV export and import of your daily totals, so you can move your history to another browser, and a button to reset it. Importing keeps the larger total for any day you already have, so importing the same file twice changes nothing.
 - The screen stays awake while the app listens, in browsers that support the Screen Wake Lock API.
-- If you unplug the microphone or a call takes it over, the session stops, keeps the time you played and tells you what happened.
+- If you unplug the microphone or a call takes it over, the session stops, keeps the time you played and tells you what happened. The status lamp turns red until you press Start again.
 - Space starts and stops a session, and the app works with a keyboard and a screen reader. A screen reader tells you when a session starts, stops or reaches the goal and stays quiet between phrases.
 - Light and dark themes that follow your system setting
 - Offline use. After your first visit a service worker keeps a copy of the page, so it reloads without a connection, and you can add it to your home screen like an app. You don't sign up for anything, and the app has no server.
