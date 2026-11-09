@@ -422,13 +422,13 @@ test('text keeps 4.5:1 on every surface in both themes', () => {
   };
   for (const [theme, vars] of [['light', light], ['dark', dark]]) {
     const color = (name) => new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i').exec(vars)[1];
-    // Labels and values sit on the page, on panels and on the notice and kbd wells (cab).
-    for (const [fg, bg] of [['ink', 'panel'], ['ink', 'cab'], ['ink-2', 'panel'], ['ink-2', 'cab'],
-      ['steel', 'panel'], ['panel', 'ink']]) {
+    // Labels and values sit on the page, on panels and on the notice and kbd wells (ground).
+    for (const [fg, bg] of [['ink', 'panel'], ['ink', 'ground'], ['ink-2', 'panel'], ['ink-2', 'ground'],
+      ['link', 'panel'], ['panel', 'ink']]) {
       const c = contrast(color(fg), color(bg));
       assert.ok(c >= 4.5, `${theme} ${fg} on ${bg}: ${c.toFixed(2)}`);
     }
-    // Red is only a graphic (the fault lamp, the notice edge), so it needs 3:1, not 4.5:1.
+    // Red is only a graphic (the fault pad, the notice edge), so it needs 3:1, not 4.5:1.
     const fault = contrast(color('fault'), color('panel'));
     assert.ok(fault >= 3, `${theme} fault on panel: ${fault.toFixed(2)}`);
   }

@@ -1,5 +1,5 @@
-/* practicemeter. Uses only the variables from tokens.css (the A2M33 "control room" system):
-   no colour, font or radius literals here. */
+/* practicemeter. Uses only the variables from tokens.css (the A2M33 "trace" system):
+   no colour or font literals here. */
 
 body {
   min-height: 100vh;
@@ -58,19 +58,16 @@ p { margin: 0; }
 
 .panel h2 { font-size: var(--t-lg); margin: 0; }
 
-/* ---------- Stage: status lamp, clock, meter, start ---------- */
+/* ---------- Stage: status pad, clock, meter, start ---------- */
 
 .stage { container-type: inline-size; display: flex; flex-direction: column; align-items: flex-start; }
 
 .status { display: flex; align-items: center; gap: var(--s2); font-weight: 500; min-height: 1.5em; }
-.status .lamp { flex: none; transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
-/* Amber while the clock counts. A short pause still counts, so it keeps the amber as a ring. */
-.stage[data-status="playing"] .lamp {
-  background: var(--amber);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 25%, transparent);
-}
-.stage[data-status="holding"] .lamp { background: transparent; box-shadow: inset 0 0 0 2px var(--amber); }
-.stage[data-fault] .lamp { background: var(--fault); box-shadow: none; }
+.status .pad { flex: none; transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+/* Filled signal while the clock counts. A short pause still counts, so it keeps the signal as a ring. */
+.stage[data-status="playing"] .pad { border-color: var(--signal); background: var(--signal); }
+.stage[data-status="holding"] .pad { border-color: var(--signal); background: transparent; }
+.stage[data-fault] .pad { border-color: var(--fault); background: var(--fault); }
 
 /* The hero reading. Sized to the panel so eight digits never overflow it. */
 .clock {
@@ -92,7 +89,7 @@ p { margin: 0; }
 }
 /* Value first, label under it. The dt stays first in the markup for screen readers. */
 .session-stats div, .totals div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 2px; }
-.session-stats dt, .totals dt { font-family: var(--font-tag); font-weight: 500; font-size: var(--t-sm); color: var(--ink-2); }
+.session-stats dt, .totals dt { font-family: var(--font); font-weight: 500; font-size: var(--t-sm); color: var(--ink-2); }
 .session-stats dd, .totals dd { margin: 0; font-size: var(--t-xl); font-weight: 500; line-height: 1.15; white-space: nowrap; }
 
 /* Level meter: an inset track, a neutral fill and the threshold as a tick across it. */
@@ -123,6 +120,12 @@ p { margin: 0; }
 @media (hover: hover) {
   .btn.primary:hover { background: color-mix(in srgb, var(--ink) 84%, var(--panel)); }
 }
+/* tokens.css sets a hover border on every .btn; touch screens keep it after a tap, so undo it there. */
+@media (hover: none) {
+  .btn:hover { border-color: var(--line); }
+  .btn[data-variant="primary"]:hover { border-color: var(--ink); }
+}
+.btn:active { transform: scale(0.98); }
 .btn.primary:active { background: color-mix(in srgb, var(--ink) 72%, var(--panel)); }
 .btn[aria-disabled="true"] { opacity: 0.6; cursor: progress; }
 .hint { color: var(--ink-2); font-size: var(--t-sm); }
@@ -131,12 +134,12 @@ kbd {
   font: 500 var(--t-xs) var(--font);
   padding: 1px var(--s1);
   border: 1px solid var(--line); border-radius: var(--r-control);
-  background: var(--cab); color: var(--ink);
+  background: var(--ground); color: var(--ink);
 }
 
 .notice {
   margin-top: var(--s5); padding: var(--s3) var(--s4); max-width: 60ch;
-  background: var(--cab); color: var(--ink);
+  background: var(--ground); color: var(--ink);
   border: 1px solid var(--line); border-left: 3px solid var(--ink-2);
   border-radius: var(--r-control);
   font-size: var(--t-sm);
@@ -154,7 +157,7 @@ kbd {
   stroke-dasharray: 326.73; stroke-dashoffset: 326.73;
   transition: stroke-dashoffset 600ms var(--ease);
 }
-.ring-burst { stroke: var(--amber); opacity: 0; transform-box: fill-box; transform-origin: center; }
+.ring-burst { stroke: var(--ok); opacity: 0; transform-box: fill-box; transform-origin: center; }
 /* Played once when today's goal is reached during a session. */
 .goal.celebrate .ring-burst { animation: ring-burst 1.1s var(--ease) 1; }
 @keyframes ring-burst {
@@ -183,7 +186,7 @@ kbd {
 .bar {
   width: 100%; max-width: 16px; min-height: 2px;
   height: calc(var(--plot) * var(--f, 0));
-  border-radius: 2px 2px 0 0;
+  border-radius: var(--r-control) var(--r-control) 0 0;
   background: var(--line);
 }
 .bars li.met .bar { background: var(--ink-2); }
@@ -228,7 +231,7 @@ kbd {
 .session-table th:last-child, .session-table td:last-child { padding-right: 0; }
 .session-table thead th {
   padding-top: 0;
-  font-family: var(--font-tag); font-weight: 500; font-size: var(--t-sm); color: var(--ink-2);
+  font-family: var(--font); font-weight: 500; font-size: var(--t-sm); color: var(--ink-2);
   border-bottom-color: var(--ink-2);
 }
 /* The start date may wrap, so the table stays inside its panel on small phones and with
@@ -244,13 +247,13 @@ kbd {
 .settings h2 { grid-column: 1 / -1; }
 .field { display: grid; grid-template-columns: 1fr auto; gap: var(--s2) var(--s3); align-items: center; }
 .field label { font-weight: 500; }
-.field input[type="range"] { grid-column: 1 / -1; grid-row: 2; width: 100%; margin: var(--s1) 0; accent-color: var(--steel); }
+.field input[type="range"] { grid-column: 1 / -1; grid-row: 2; width: 100%; margin: var(--s1) 0; accent-color: var(--link); }
 .field output { grid-column: 2; grid-row: 1; font-weight: 500; }
 .help { grid-column: 1 / -1; color: var(--ink-2); font-size: var(--t-sm); }
 .field-inline { grid-template-columns: 1fr; }
 .check { display: inline-flex; align-items: center; gap: var(--s2); cursor: pointer; }
 .field .check { font-weight: 400; }
-.check input { width: 18px; height: 18px; margin: 0; accent-color: var(--steel); }
+.check input { width: 18px; height: 18px; margin: 0; accent-color: var(--link); }
 .number-wrap { display: inline-flex; align-items: center; gap: var(--s2); color: var(--ink-2); }
 input[type="number"] {
   width: 90px; min-height: 40px; padding: 0 var(--s3);

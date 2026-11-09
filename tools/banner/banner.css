@@ -1,54 +1,22 @@
-/* practicemeter README banner, 1280x640. Uses only the variables from tokens.css. */
-
-html, body { width: 1280px; height: 640px; overflow: hidden; }
-body { padding: var(--s7); }
-p { margin: 0; }
-
-.sheet {
-  height: 100%;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--r-panel);
-}
-
-.top {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--s6);
-  align-items: center;
-  padding: 0 var(--s6);
-}
-
-.head {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--s5);
-  align-items: center;
-}
-.icon { display: block; border-radius: 22px; }
-.head h1 { font-size: 3.6rem; line-height: 1; margin: 0 0 var(--s2); letter-spacing: 0; }
-.sub { font-size: var(--t-lg); color: var(--ink-2); max-width: 34ch; line-height: 1.4; }
-
-.instrument {
-  width: 340px;
-  padding: var(--s4) var(--s5) var(--s5);
-  background: var(--inset);
-  border-radius: var(--r-control);
-}
-.status { display: flex; align-items: center; gap: var(--s2); font-weight: 500; font-size: var(--t-lg); }
-.clock { margin: var(--s2) 0 var(--s4); font-size: 4.2rem; font-weight: 500; line-height: 1; letter-spacing: -0.01em; }
-.meter { position: relative; height: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-control); }
-.fill { position: absolute; inset: 0 22% 0 0; background: var(--ink-2); }
-.tick { position: absolute; left: 52%; top: -6px; bottom: -6px; width: 2px; background: var(--ink); }
-
-.readings {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-top: 1px solid var(--line);
-}
-.cell { padding: var(--s5) var(--s6); }
-.cell + .cell { border-left: 1px solid var(--line); }
-.cell .reading { margin-bottom: var(--s2); }
-.cell .tag { font-size: var(--t-md); }
+/* A2M33 "trace" banner frame, 1280x640. Uses tokens.css variables only.
+   Left: name and one sentence. Right: the real artifact with traced callouts. */
+:root { color-scheme: dark; }
+html, body { width: 1280px; height: 640px; overflow: hidden; background: var(--ground); }
+.sheet { position: relative; width: 1280px; height: 640px; padding: 64px 72px; }
+.intro { position: absolute; left: 72px; top: 64px; bottom: 64px; width: 400px; display: flex; flex-direction: column; }
+.icon { width: 64px; height: 64px; display: block; margin-bottom: 40px; }
+h1 { font-size: 76px; font-weight: 600; letter-spacing: -0.035em; line-height: 0.95; margin: 0 0 22px; }
+.sub { font-size: 23px; line-height: 1.42; color: var(--ink-2); margin: 0; max-width: 21ch; text-wrap: pretty; }
+.sub b { color: var(--ink); font-weight: 500; }
+.meta { margin-top: auto; display: flex; align-items: center; gap: 12px; font-size: 16px; line-height: 1; color: var(--ink-2); }
+.meta .pad { width: 9px; height: 9px; }
+.artifact { position: absolute; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-panel); background: var(--panel); }
+.artifact img { display: block; }
+.callout { position: absolute; font-size: 15px; line-height: 1.35; color: var(--ink-2); width: 190px; }
+.callout b { display: block; color: var(--ink); font-weight: 600; font-size: 16px; }
+.callout.lit b { color: var(--signal-ink); }
+svg.traces { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+svg.traces path { fill: none; stroke: var(--trace); stroke-width: 1.5; }
+svg.traces circle { fill: var(--ground); stroke: var(--trace); stroke-width: 1.5; }
+svg.traces .lit path, svg.traces .lit circle { stroke: var(--signal); }
+svg.traces .lit circle.end { fill: var(--signal); }

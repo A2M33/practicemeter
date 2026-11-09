@@ -5,43 +5,34 @@
 <title>practicemeter banner</title>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="banner.css">
+<script src="trace.js"></script>
+<style>
+  /* app.png: the practice clock panel at 2x, dark, from the running demo (python tools/shoot.py).
+     The shot already has its own panel border, so it sits on the board without .artifact. */
+  .shot { position: absolute; left: 584px; top: 112px; width: 624px; display: block; }
+</style>
 </head>
 <body>
 <main class="sheet">
-  <div class="top">
-    <header class="head">
-      <img class="icon" src="icon.png" width="104" height="104" alt="">
-      <div>
-        <h1>practicemeter</h1>
-        <p class="sub">A practice timer for musicians. It listens through the microphone and counts only the time your instrument sounds.</p>
-      </div>
-    </header>
-
-    <section class="instrument" aria-label="The app while you play">
-      <p class="status"><span class="lamp" data-state="live"></span> Playing</p>
-      <p class="clock">00:24:18</p>
-      <div class="meter"><div class="fill"></div><div class="tick"></div></div>
-    </section>
-  </div>
-
-  <section class="readings">
-    <div class="cell">
-      <p class="reading">150<small>ms</small></p>
-      <p class="tag">Shortest sound that counts</p>
-    </div>
-    <div class="cell">
-      <p class="reading">3<small>s</small></p>
-      <p class="tag">Gap that still counts, 1 to 10</p>
-    </div>
-    <div class="cell">
-      <p class="reading">6–24<small>dB</small></p>
-      <p class="tag">Above the room, set by sensitivity</p>
-    </div>
-    <div class="cell">
-      <p class="reading">0<small>bytes</small></p>
-      <p class="tag">Audio recorded or uploaded</p>
-    </div>
+  <section class="intro">
+    <img class="icon" src="icon.png" alt="">
+    <h1>practicemeter</h1>
+    <p class="sub">A practice timer that counts only the minutes your instrument sounds.</p>
+    <p class="meta"><span class="pad" data-state="live"></span>JavaScript · works offline · no audio leaves the phone</p>
   </section>
+
+  <img class="shot" src="app.png" alt="">
+
+  <p class="callout lit" id="c-pad" style="left:646px;top:36px;width:520px"><b>Lit while the microphone hears you play</b>Sound has to rise 6 to 24 dB over the room for 150 ms.</p>
 </main>
+<script>
+  // shot coordinates (2x pixels) to banner coordinates; the status pad sits at (60, 73)
+  const img = (x, y) => [584 + x / 2, 112 + y / 2];
+  const pad = img(60, 73);
+  const label = document.getElementById("c-pad").getBoundingClientRect();
+  traces([
+    [[label.left + 4, label.bottom + 6], [pad[0], pad[1] - 4.5], { lit: true, r: 0 }],
+  ]);
+</script>
 </body>
 </html>

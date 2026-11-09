@@ -107,7 +107,7 @@
 
   /* ---------- notices ---------- */
 
-  /** fault marks a microphone problem: the status lamp turns red until the next Start. */
+  /** fault marks a microphone problem: the status pad turns red until the next Start. */
   function showNotice(text, fault) {
     el.notice.textContent = text;
     el.notice.hidden = false;

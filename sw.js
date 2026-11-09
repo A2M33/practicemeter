@@ -8,17 +8,18 @@
  */
 'use strict';
 
-var CACHE = 'practicemeter-v3';
+var CACHE = 'practicemeter-v4';
 var FILES = [
   './',
   'index.html',
   'tokens.css',
   'style.css',
-  'fonts/Barlow-Regular.woff2',
-  'fonts/Barlow-Medium.woff2',
-  'fonts/Barlow-SemiBold.woff2',
-  'fonts/BarlowSemiCondensed-Medium.woff2',
-  'fonts/BarlowSemiCondensed-SemiBold.woff2',
+  'fonts/Archivo-400.woff2',
+  'fonts/Archivo-500.woff2',
+  'fonts/Archivo-600.woff2',
+  'fonts/Archivo-700.woff2',
+  'fonts/JetBrainsMono-400.woff2',
+  'fonts/JetBrainsMono-500.woff2',
   'detector.js',
   'micwatch.js',
   'history.js',
